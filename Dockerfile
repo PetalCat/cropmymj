@@ -15,8 +15,8 @@ COPY package*.json pnpm-lock.yaml ./
 # Install dependencies using pnpm
 RUN pnpm install --frozen-lockfile
 
-# Rebuild better-sqlite3 for Alpine Linux
-RUN pnpm rebuild better-sqlite3
+# Rebuild better-sqlite3 with node-gyp directly in the pnpm store
+RUN cd node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release
 
 # Copy source code
 COPY . .
@@ -44,8 +44,8 @@ COPY package*.json pnpm-lock.yaml ./
 # Install ALL dependencies (including dev dependencies needed for native module building)
 RUN pnpm install --frozen-lockfile
 
-# Rebuild better-sqlite3 for the production container architecture
-RUN pnpm rebuild better-sqlite3
+# Rebuild better-sqlite3 with node-gyp directly in the pnpm store
+RUN cd node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release
 
 # Copy built application from builder
 COPY --from=builder /app/build ./build
