@@ -4,6 +4,16 @@ Bulk Image Uploader for Posture Cropping Web App
 
 Upload unlimited images to the API in batches.
 Supports reading images from a directory and uploading with optional metadata.
+
+Examples:
+    # Upload to localhost
+    python3 bulk_upload.py /path/to/images --token YOUR_TOKEN
+    
+    # Upload to remote server
+    python3 bulk_upload.py /path/to/images --url https://example.com/api/v1/images/upload-bulk --token YOUR_TOKEN
+    
+    # Dry run to see what would be uploaded
+    python3 bulk_upload.py /path/to/images --token YOUR_TOKEN --dry-run
 """
 
 import os
@@ -122,7 +132,9 @@ def main():
         help='Directory containing images to upload'
     )
     parser.add_argument(
+        '--url',
         '--api-url',
+        dest='api_url',
         default='http://localhost:5174/api/v1/images/upload-bulk',
         help='API endpoint URL (default: http://localhost:5174/api/v1/images/upload-bulk)'
     )
