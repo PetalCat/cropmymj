@@ -20,6 +20,7 @@ console.log('=== Environment Variables Debug ===');
 console.log('SITE_PASSWORD exists:', !!SITE_PASSWORD);
 console.log('PASSWORD_ENABLED:', PASSWORD_ENABLED);
 console.log('DB_PATH:', DB_PATH || '[NOT SET]');
+console.log('BODY_SIZE_LIMIT:', env.BODY_SIZE_LIMIT || '[NOT SET - using default 512KB]');
 console.log('===================================');
 
 // Hash password for comparison
