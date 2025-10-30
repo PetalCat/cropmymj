@@ -15,9 +15,10 @@ coverage
 .pnpm-store
 dist
 
-# Exclude data directory (database and images)
-data/
-data/**
+# Exclude data directory at root (database and images)
+# Use leading slash to match only at root, not prisma/data/
+/data/
+/data/**
 
 # Exclude static images
 static/images/
@@ -28,5 +29,5 @@ exports/
 exports/**
 
 # Exclude build directory
-build/
-build/**
+/build/
+/build/**
