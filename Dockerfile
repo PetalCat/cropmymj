@@ -3,6 +3,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install build dependencies for native modules (better-sqlite3)
+RUN apk add --no-cache python3 make g++
+
 # Install pnpm globally
 RUN npm install -g pnpm
 
@@ -22,6 +25,9 @@ RUN pnpm run build
 FROM node:20-alpine
 
 WORKDIR /app
+
+# Install runtime dependencies for better-sqlite3
+RUN apk add --no-cache python3 make g++
 
 # Install pnpm globally in the production stage
 RUN npm install -g pnpm
