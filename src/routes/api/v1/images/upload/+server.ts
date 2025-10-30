@@ -2,11 +2,10 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { validateApiToken } from '$lib/server/auth';
 import prisma from '$lib/server/db';
+import { IMAGES_PATH } from '$env/static/private';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
-
-const IMAGES_DIR = process.env.IMAGES_PATH || './static/images';
 
 /**
  * POST /api/v1/images/upload
@@ -49,16 +48,16 @@ export const POST: RequestHandler = async (event) => {
 			}
 
 			// Ensure images directory exists
-			if (!existsSync(IMAGES_DIR)) {
-				await mkdir(IMAGES_DIR, { recursive: true });
+			if (!existsSync(IMAGES_PATH)) {
+				await mkdir(IMAGES_PATH, { recursive: true });
 			}
 
 			// Convert base64 to buffer and save
 			const imageBuffer = Buffer.from(imageData, 'base64');
-			const filePath = join(IMAGES_DIR, filename);
+			const filePath = join(IMAGES_PATH, filename);
 			await writeFile(filePath, imageBuffer);
 
-			// Insert into database (upsert to handle duplicates)
+			// Upsert image in database
 			const image = await prisma.image.upsert({
 				where: { filename },
 				update: {},
@@ -71,29 +70,30 @@ export const POST: RequestHandler = async (event) => {
 					return json({ error: 'Invalid orientation. Must be "side" or "front"' }, { status: 400 });
 				}
 
-				await prisma.crop.create({
-					data: {
-						image_id: image.id,
-						user_id: userId,
-						x: crop.x,
-						y: crop.y,
-						width: crop.width,
-						height: crop.height
-					}
-				});
-
-				await prisma.orientation.create({
-					data: {
-						image_id: image.id,
-						user_id: userId,
-						orientation
-					}
-				});
+				await prisma.$transaction([
+					prisma.crop.create({
+						data: {
+							image_id: image.id,
+							user_id: userId,
+							x: crop.x,
+							y: crop.y,
+							width: crop.width,
+							height: crop.height
+						}
+					}),
+					prisma.orientation.create({
+						data: {
+							image_id: image.id,
+							user_id: userId,
+							orientation
+						}
+					})
+				]);
 			}
 
 			return json({
 				success: true,
-				id: image.id,
+				imageId: image.id,
 				filename
 			});
 		} else if (contentType.includes('multipart/form-data')) {
@@ -114,16 +114,16 @@ export const POST: RequestHandler = async (event) => {
 			}
 
 			// Ensure images directory exists
-			if (!existsSync(IMAGES_DIR)) {
-				await mkdir(IMAGES_DIR, { recursive: true });
+			if (!existsSync(IMAGES_PATH)) {
+				await mkdir(IMAGES_PATH, { recursive: true });
 			}
 
 			// Save file
 			const buffer = Buffer.from(await file.arrayBuffer());
-			const filePath = join(IMAGES_DIR, filename);
+			const filePath = join(IMAGES_PATH, filename);
 			await writeFile(filePath, buffer);
 
-			// Insert into database (upsert to handle duplicates)
+			// Upsert image in database
 			const image = await prisma.image.upsert({
 				where: { filename },
 				update: {},
@@ -132,7 +132,7 @@ export const POST: RequestHandler = async (event) => {
 
 			return json({
 				success: true,
-				id: image.id,
+				imageId: image.id,
 				filename
 			});
 		} else {

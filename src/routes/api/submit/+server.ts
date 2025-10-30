@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import db from '$lib/server/db';
+import prisma from '$lib/server/db';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -15,26 +15,33 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 
 	try {
-		// Insert or get image
-		const insertImage = db.prepare(
-			'INSERT OR IGNORE INTO images (filename, width, height) VALUES (?, ?, ?)'
-		);
-		insertImage.run(filename, width, height);
+		// Upsert image (create if doesn't exist, or get existing)
+		const image = await prisma.image.upsert({
+			where: { filename },
+			update: {},
+			create: { filename, width, height }
+		});
 
-		const getImage = db.prepare('SELECT id FROM images WHERE filename = ?');
-		const image = getImage.get(filename) as { id: number };
-
-		// Insert crop
-		const insertCrop = db.prepare(
-			'INSERT INTO crops (image_id, user_id, x, y, width, height) VALUES (?, ?, ?, ?, ?, ?)'
-		);
-		insertCrop.run(image.id, userId, crop.x, crop.y, crop.width, crop.height);
-
-		// Insert orientation
-		const insertOrientation = db.prepare(
-			'INSERT INTO orientations (image_id, user_id, orientation) VALUES (?, ?, ?)'
-		);
-		insertOrientation.run(image.id, userId, orientation);
+		// Create crop and orientation in a transaction
+		await prisma.$transaction([
+			prisma.crop.create({
+				data: {
+					image_id: image.id,
+					user_id: userId,
+					x: crop.x,
+					y: crop.y,
+					width: crop.width,
+					height: crop.height
+				}
+			}),
+			prisma.orientation.create({
+				data: {
+					image_id: image.id,
+					user_id: userId,
+					orientation
+				}
+			})
+		]);
 
 		return json({ success: true, imageId: image.id });
 	} catch (error) {

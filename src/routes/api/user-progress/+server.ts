@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import db from '$lib/server/db';
+import prisma from '$lib/server/db';
 
 /**
  * GET /api/user-progress?userId=xxx
@@ -15,21 +15,23 @@ export const GET: RequestHandler = async ({ url }) => {
 
 	try {
 		// Count how many crops this user has submitted
-		const cropCount = db.prepare('SELECT COUNT(*) as count FROM crops WHERE user_id = ?');
-		const cropResult = cropCount.get(userId) as { count: number } | undefined;
+		const cropCount = await prisma.crop.count({
+			where: { user_id: userId }
+		});
 
 		// Count how many unfit marks this user has submitted
-		const unfitCount = db.prepare('SELECT COUNT(*) as count FROM unfits WHERE user_id = ?');
-		const unfitResult = unfitCount.get(userId) as { count: number } | undefined;
+		const unfitCount = await prisma.unfit.count({
+			where: { user_id: userId }
+		});
 
 		// Total submissions = crops + unfits
-		const totalSubmissions = (cropResult?.count || 0) + (unfitResult?.count || 0);
+		const totalSubmissions = cropCount + unfitCount;
 
 		return json({
 			userId,
 			submissionCount: totalSubmissions,
-			cropCount: cropResult?.count || 0,
-			unfitCount: unfitResult?.count || 0
+			cropCount,
+			unfitCount
 		});
 	} catch (error) {
 		console.error('Database error:', error);
