@@ -50,6 +50,10 @@ RUN pnpm prisma generate
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/.svelte-kit ./.svelte-kit
 
+# Copy start script
+COPY start.sh ./start.sh
+RUN chmod +x ./start.sh
+
 # Create directories for data and images
 RUN mkdir -p /app/data /app/images
 
@@ -59,6 +63,7 @@ EXPOSE 8547
 # Environment variables (can be overridden at runtime)
 ENV NODE_ENV=production
 ENV DATABASE_URL="file:./data/crops.db"
+ENV BODY_SIZE_LIMIT=104857600
 
-# Start the application
-CMD ["node", "build"]
+# Start the application using the start script
+CMD ["./start.sh"]
