@@ -30,6 +30,8 @@ data/*.db-wal
 # Images - keep directory structure but ignore actual images
 static/images/*
 !static/images/README.md
+data/images/*
+!data/images/.gitkeep
 
 # Exports - classification data exports
 exports/

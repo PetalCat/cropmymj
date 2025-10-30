@@ -1,13 +1,14 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import type { RequestHandler } from './$types';
+import { env } from '$env/dynamic/private';
 
-const NORMAL_SET_DIR = join(process.cwd(), '..', 'normal-set');
+const IMAGES_PATH = env.IMAGES_PATH || './data/images';
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {
 		const filename = params.filename;
-		const filepath = join(NORMAL_SET_DIR, filename);
+		const filepath = join(IMAGES_PATH, filename);
 
 		// Read the image file
 		const file = await readFile(filepath);
