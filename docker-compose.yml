@@ -22,6 +22,9 @@ services:
     volumes:
       # Persist database and images
       - ./data:/app/data
-      # Mount static/images for example images (not in git)
-      - ./static/images:/app/static/images
+      # Mount example images individually (not in git, but needed at runtime)
+      - ./static/images/good.png:/app/build/client/images/good.png
+      - ./static/images/needmoreshoulder.png:/app/build/client/images/needmoreshoulder.png
+      - ./static/images/toomanypeople.png:/app/build/client/images/toomanypeople.png
+      - ./static/images/unfit.png:/app/build/client/images/unfit.png
     restart: unless-stopped
