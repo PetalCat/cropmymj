@@ -3,6 +3,7 @@
 ## Problem
 
 The SvelteKit application was rejecting bulk image uploads with error:
+
 ```
 SvelteKitError: Content-length of XXXXXX exceeds limit of 524288 bytes.
 ```
@@ -16,12 +17,14 @@ Set the `BODY_SIZE_LIMIT` environment variable to a larger value (100MB by defau
 ### For Docker Deployment
 
 1. The `BODY_SIZE_LIMIT` environment variable is set in `docker-compose.yml`:
+
    ```yaml
    environment:
      - BODY_SIZE_LIMIT=${BODY_SIZE_LIMIT:-104857600}
    ```
 
 2. The `start.sh` script ensures it's properly exported before starting node:
+
    ```sh
    : ${BODY_SIZE_LIMIT:=104857600}
    export BODY_SIZE_LIMIT
@@ -68,6 +71,7 @@ docker-compose up -d
 Default: **100MB** (104857600 bytes)
 
 This allows for:
+
 - Single large images up to 100MB
 - Multiple smaller images in bulk uploads
 - Base64 encoded images (which are ~33% larger than raw)
