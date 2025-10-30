@@ -1,17 +1,6 @@
 import { json } from '@sveltejs/kit';
-import db from '$lib/server/db';
+import prisma from '$lib/server/db';
 import type { RequestHandler } from './$types';
-
-interface CropRow {
-	x: number;
-	y: number;
-	width: number;
-	height: number;
-}
-
-interface OrientationRow {
-	orientation: string;
-}
 
 export const GET: RequestHandler = async ({ url }) => {
 	const filename = url.searchParams.get('filename');
@@ -21,38 +10,33 @@ export const GET: RequestHandler = async ({ url }) => {
 	}
 
 	try {
-		// Get image ID
-		const getImage = db.prepare('SELECT id, width, height FROM images WHERE filename = ?');
-		const image = getImage.get(filename) as
-			| { id: number; width: number; height: number }
-			| undefined;
+		// Get image with crops and orientations
+		const image = await prisma.image.findUnique({
+			where: { filename },
+			include: {
+				crops: true,
+				orientations: true
+			}
+		});
 
 		if (!image) {
 			return json({ error: 'Image not found' }, { status: 404 });
 		}
 
-		// Get all crops for this image
-		const getCrops = db.prepare('SELECT x, y, width, height FROM crops WHERE image_id = ?');
-		const crops = getCrops.all(image.id) as CropRow[];
-
-		if (crops.length === 0) {
+		if (image.crops.length === 0) {
 			return json({ error: 'No crops found for this image' }, { status: 404 });
 		}
 
 		// Calculate average crop
 		const avgCrop = {
-			x: Math.round(crops.reduce((sum, c) => sum + c.x, 0) / crops.length),
-			y: Math.round(crops.reduce((sum, c) => sum + c.y, 0) / crops.length),
-			width: Math.round(crops.reduce((sum, c) => sum + c.width, 0) / crops.length),
-			height: Math.round(crops.reduce((sum, c) => sum + c.height, 0) / crops.length)
+			x: Math.round(image.crops.reduce((sum, c) => sum + c.x, 0) / image.crops.length),
+			y: Math.round(image.crops.reduce((sum, c) => sum + c.y, 0) / image.crops.length),
+			width: Math.round(image.crops.reduce((sum, c) => sum + c.width, 0) / image.crops.length),
+			height: Math.round(image.crops.reduce((sum, c) => sum + c.height, 0) / image.crops.length)
 		};
 
-		// Get all orientations for this image
-		const getOrientations = db.prepare('SELECT orientation FROM orientations WHERE image_id = ?');
-		const orientations = getOrientations.all(image.id) as OrientationRow[];
-
 		// Find most common orientation
-		const orientationCounts = orientations.reduce(
+		const orientationCounts = image.orientations.reduce(
 			(acc, o) => {
 				acc[o.orientation] = (acc[o.orientation] || 0) + 1;
 				return acc;
@@ -69,7 +53,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			imageHeight: image.height,
 			consensusCrop: avgCrop,
 			consensusOrientation: mostCommonOrientation,
-			submissionCount: crops.length,
+			submissionCount: image.crops.length,
 			orientationCounts
 		});
 	} catch (error) {

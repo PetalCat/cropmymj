@@ -7,12 +7,23 @@ A SvelteKit-based web application for crowd-sourced image cropping and orientati
 - 🖼️ Display images from a folder for cropping
 - ✂️ Interactive canvas-based rectangle crop selection
 - 🔄 Side/Front orientation classification
-- 💾 Store multiple user submissions per image in SQLite
+- 💾 Store multiple user submissions per image with Prisma ORM
 - 📊 Calculate consensus crops (average coordinates)
 - 🎯 Determine most common orientation
-- 🐍 Python API client for fetching consensus data
+- 🔐 Dual authentication: session-based UI + Bearer token API
+- � **Bulk upload API** - Upload hundreds of images at once
+- �🐍 Python API client for fetching consensus data
+- 🚀 RESTful API for programmatic image uploads and downloads
 
-## Setup
+## Tech Stack
+
+- **Framework**: SvelteKit 2.48.3
+- **Database**: SQLite with Prisma ORM 6.18.0
+- **Runtime**: Node.js with adapter-node
+- **Authentication**: Session cookies + Bearer tokens
+- **Build**: Vite 7.1.12
+
+## Quick Start
 
 1. Install dependencies:
 
@@ -20,57 +31,83 @@ A SvelteKit-based web application for crowd-sourced image cropping and orientati
 pnpm install
 ```
 
-2. Create required directories:
+2. Setup environment variables:
+
+```bash
+cat > .env << 'EOF'
+DATABASE_URL="file:./data/crops.db"
+IMAGES_PATH=./static/images
+SITE_PASSWORD=your-secure-password
+API_TOKENS=token1,token2,token3
+EOF
+```
+
+3. Create required directories:
 
 ```bash
 mkdir -p data static/images
 ```
 
-3. Place your images in `static/images/`
-
-4. Configure environment variables:
+4. Initialize database:
 
 ```bash
-cp .env.example .env
-# Edit .env to customize:
-# - PORT (default: 3000)
-# - HOST (default: 0.0.0.0)
-# - DB_PATH (default: ./data/crops.db)
-# - IMAGES_PATH (default: ./static/images)
+pnpm prisma db push
 ```
 
-## Running the App
+5. Place your images in `static/images/`
 
-### Development Mode
-
-Start the development server:
+6. Start development server:
 
 ```bash
 pnpm run dev
 ```
 
-Visit http://localhost:5173 to start cropping and classifying images.
+Visit http://localhost:5174 to start cropping and classifying images.
 
-### Production Mode
+## Bulk Upload Images
 
-Build and run in production:
+Upload multiple images at once! See [QUICK_START_BULK.md](./QUICK_START_BULK.md) for a 2-minute guide.
+
+**Quick example:**
 
 ```bash
-# Build the application
-pnpm run build
+# Add API token to .env
+echo "API_TOKENS=my-secret-token" >> .env
 
-# Start the production server
-pnpm start
-# Or use the startup script
-./start.sh
+# Upload all images from a directory
+./bulk_upload.sh /path/to/photos my-secret-token
 ```
 
-The production server will run on the port specified in `.env` (default: 3000).
-Visit http://localhost:3000
+See [BULK_UPLOAD.md](./BULK_UPLOAD.md) for complete documentation.
+
+## Authentication
+
+See [AUTH.md](./AUTH.md) for detailed authentication documentation.
+
+### Web UI Access
+
+- Protected by `SITE_PASSWORD` when set
+- Login at `/login`
+- Session cookie-based authentication
+
+### API Access
+
+- Protected by `API_TOKENS`
+- Use `Authorization: Bearer <token>` header
+- Access v1 endpoints: upload, download, list, data, bulk
+
+## Database
+
+See [PRISMA.md](./PRISMA.md) for Prisma migration details.
+
+- **ORM**: Prisma with TypeScript type safety
+- **Location**: `./data/crops.db` (SQLite)
+- **Schema**: 4 models (Image, Crop, Orientation, Unfit)
+- **Migrations**: Currently using `db push` for development
 
 ## Using Consensus Data in Python
 
-The web app provides an API endpoint to fetch consensus crop and orientation data for use in your Python posture analysis pipeline.
+The web app provides API endpoints to fetch consensus crop and orientation data for use in your Python posture analysis pipeline.
 
 ### Example Usage
 

@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import db from '$lib/server/db';
+import prisma from '$lib/server/db';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -11,18 +11,20 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 
 	try {
-		// Insert or get image
-		const insertImage = db.prepare(
-			'INSERT OR IGNORE INTO images (filename, width, height) VALUES (?, ?, ?)'
-		);
-		insertImage.run(filename, width, height);
+		// Upsert image (create if doesn't exist, or get existing)
+		const image = await prisma.image.upsert({
+			where: { filename },
+			update: {},
+			create: { filename, width, height }
+		});
 
-		const getImage = db.prepare('SELECT id FROM images WHERE filename = ?');
-		const image = getImage.get(filename) as { id: number };
-
-		// Insert unfit marking
-		const insertUnfit = db.prepare('INSERT INTO unfits (image_id, user_id) VALUES (?, ?)');
-		insertUnfit.run(image.id, userId);
+		// Create unfit marking
+		await prisma.unfit.create({
+			data: {
+				image_id: image.id,
+				user_id: userId
+			}
+		});
 
 		return json({ success: true, imageId: image.id });
 	} catch (error) {

@@ -31,6 +31,23 @@ data/*.db-wal
 static/images/*
 !static/images/README.md
 
+# Exports - classification data exports
+exports/
+*.csv
+*.json
+!package.json
+!tsconfig.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+.pytest_cache/
+
 # Logs
 *.log
 logs/
@@ -40,4 +57,9 @@ logs/
 .idea/
 *.sublime-*
 
-/../generated/prisma
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~

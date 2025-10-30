@@ -21,8 +21,9 @@ export const GET: RequestHandler = async (event) => {
 		const image = await prisma.image.findUnique({
 			where: { filename },
 			include: {
-				crops: true,
-				orientations: true
+				crops: { select: { x: true, y: true, width: true, height: true, user_id: true } },
+				orientations: { select: { orientation: true, user_id: true } },
+				unfits: { select: { user_id: true } }
 			}
 		});
 
@@ -30,39 +31,35 @@ export const GET: RequestHandler = async (event) => {
 			return json({ error: 'Image not found' }, { status: 404 });
 		}
 
+		const { crops, orientations, unfits, ...imageData } = image;
+
 		// Calculate consensus
 		let consensusCrop = null;
-		if (image.crops.length > 0) {
+		if (crops.length > 0) {
 			consensusCrop = {
-				x: Math.round(image.crops.reduce((sum, c) => sum + c.x, 0) / image.crops.length),
-				y: Math.round(image.crops.reduce((sum, c) => sum + c.y, 0) / image.crops.length),
-				width: Math.round(image.crops.reduce((sum, c) => sum + c.width, 0) / image.crops.length),
-				height: Math.round(image.crops.reduce((sum, c) => sum + c.height, 0) / image.crops.length)
+				x: Math.round(crops.reduce((sum: number, c) => sum + c.x, 0) / crops.length),
+				y: Math.round(crops.reduce((sum: number, c) => sum + c.y, 0) / crops.length),
+				width: Math.round(crops.reduce((sum: number, c) => sum + c.width, 0) / crops.length),
+				height: Math.round(crops.reduce((sum: number, c) => sum + c.height, 0) / crops.length)
 			};
 		}
 
-		const orientationCounts = image.orientations.reduce(
-			(acc, o) => {
-				acc[o.orientation] = (acc[o.orientation] || 0) + 1;
-				return acc;
-			},
-			{} as Record<string, number>
-		);
+		const orientationCounts: Record<string, number> = {};
+		orientations.forEach((o) => {
+			orientationCounts[o.orientation] = (orientationCounts[o.orientation] || 0) + 1;
+		});
 
 		const consensusOrientation =
 			Object.entries(orientationCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
 
 		return json({
-			id: image.id,
-			filename: image.filename,
-			width: image.width,
-			height: image.height,
-			created_at: image.created_at,
-			crops: image.crops,
-			orientations: image.orientations,
+			...imageData,
+			crops,
+			orientations,
+			unfits,
 			consensusCrop,
 			consensusOrientation,
-			submissionCount: image.crops.length
+			submissionCount: crops.length
 		});
 	} catch (error) {
 		console.error('Database error:', error);
