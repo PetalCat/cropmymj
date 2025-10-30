@@ -1,33 +1,30 @@
-# Instructions for Testing
+# Static Images Directory
 
-## Add Your Images
+⚠️ **Note:** This directory is for static web assets only (logos, icons, UI images, etc.).
 
-To test the cropping and classification web app:
+## Uploaded Images Location
 
-1. Copy your posture analysis images to `static/images/`
-   ```bash
-   cp /path/to/your/images/*.jpg static/images/
-   ```
+User-uploaded images are stored in `data/images/`, NOT here.
 
-2. Start the dev server (if not already running):
-   ```bash
-   pnpm run dev
-   ```
+- **Static assets** (logos, UI): `static/images/` ✓
+- **Uploaded images** (posture photos): `data/images/` ✓
 
-3. Open http://localhost:5174 (or whatever port Vite assigns)
+## Why the Separation?
 
-4. Start cropping and classifying images!
+- `static/` is bundled with the build and served directly by the web server
+- `data/` is mounted as a volume, persisting across deployments
+- Large datasets shouldn't be in `static/` to avoid bloating the Docker image
 
-## Next Steps
+## For Testing
 
-Once you have multiple submissions for images, you can test the consensus API:
+If you want to manually add test images, place them in `data/images/`:
 
 ```bash
-# Test the consensus endpoint
-curl "http://localhost:5174/api/consensus?filename=your_image.jpg"
+mkdir -p data/images
+cp /path/to/your/test-images/*.jpg data/images/
 ```
 
-Or use the Python script:
+Then access them through the web app or API.
 
 ```bash
 python fetch_consensus.py your_image.jpg

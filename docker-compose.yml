@@ -17,10 +17,9 @@ services:
       - API_TOKENS=${API_TOKENS}
       - DATABASE_URL=${DATABASE_URL:-file:./data/crops.db}
       - DB_PATH=${DB_PATH:-./data/crops.db}
-      - IMAGES_PATH=${IMAGES_PATH:-./static/images}
+      - IMAGES_PATH=${IMAGES_PATH:-./data/images}
       - BODY_SIZE_LIMIT=${BODY_SIZE_LIMIT:-104857600}
     volumes:
       # Persist database and images
       - ./data:/app/data
-      - ./static/images:/app/static/images
     restart: unless-stopped

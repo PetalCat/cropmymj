@@ -57,7 +57,6 @@
      -e SITE_PASSWORD=mysecurepassword \
      -e API_TOKENS=token1,token2 \
      -v $(pwd)/data:/app/data \
-     -v $(pwd)/static/images:/app/images \
      --name cropmymj-container cropmymj
    ```
 
@@ -66,7 +65,6 @@
    docker run -d -p 8547:8547 \
      --env-file .env \
      -v $(pwd)/data:/app/data \
-     -v $(pwd)/static/images:/app/images \
      --name cropmymj-container cropmymj
    ```
 
@@ -82,7 +80,6 @@ docker run -d -p 8547:8547 `
   -e HOST=0.0.0.0 `
   -e SITE_PASSWORD=mysecurepassword `
   -v ${PWD}/data:/app/data `
-  -v ${PWD}/static/images:/app/images `
   --name cropmymj-container cropmymj
 
 # View logs
@@ -127,8 +124,11 @@ docker run -d -p 9000:9000 \
 Use volume mounts to persist your database and images:
 
 ```bash
--v $(pwd)/data:/app/data \
--v $(pwd)/static/images:/app/images
+-v $(pwd)/data:/app/data
 ```
+
+This mounts your local `data/` directory to the container, which includes:
+- `data/crops.db` - SQLite database
+- `data/images/` - Uploaded images
 
 This ensures your data survives container restarts and updates.

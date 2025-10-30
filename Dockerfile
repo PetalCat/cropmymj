@@ -51,7 +51,7 @@ COPY --from=builder /app/build ./build
 COPY --from=builder /app/.svelte-kit ./.svelte-kit
 
 # Create directories for data and images
-RUN mkdir -p /app/data /app/images
+RUN mkdir -p /app/data/images
 
 # Expose port (default, can be changed at runtime)
 EXPOSE 8547
@@ -59,6 +59,7 @@ EXPOSE 8547
 # Environment variables (can be overridden at runtime)
 ENV NODE_ENV=production
 ENV DATABASE_URL="file:./data/crops.db"
+ENV IMAGES_PATH="./data/images"
 ENV BODY_SIZE_LIMIT=104857600
 
 # Start the application
