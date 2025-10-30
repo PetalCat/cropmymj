@@ -6,6 +6,8 @@
 	let canvas: HTMLCanvasElement;
 	let ctx: CanvasRenderingContext2D | null;
 	let img: HTMLImageElement;
+	let originalWidth = 0; // Store original image dimensions
+	let originalHeight = 0;
 	let isDrawing = false;
 	let startX = 0;
 	let startY = 0;
@@ -114,11 +116,31 @@
 		};
 	});
 
-	function loadImage() {
+	async function loadImage() {
 		if (!currentImage) return;
 
 		console.log('Loading image:', currentImage);
 		message = ''; // Clear previous messages
+
+		// Fetch original dimensions first
+		try {
+			const originalImg = new Image();
+			await new Promise<void>((resolve, reject) => {
+				originalImg.onload = () => {
+					originalWidth = originalImg.width;
+					originalHeight = originalImg.height;
+					console.log('Original dimensions:', originalWidth, 'x', originalHeight);
+					resolve();
+				};
+				originalImg.onerror = reject;
+				originalImg.src = `/api/images/${currentImage}?original=true`;
+			});
+		} catch (error) {
+			console.error('Failed to load original dimensions:', error);
+			// Fallback to assuming displayed dimensions are original
+			originalWidth = 0;
+			originalHeight = 0;
+		}
 
 		// Check if image is already cached
 		if (imageCache.has(currentImage)) {
@@ -131,13 +153,20 @@
 			canvas.width = img.width;
 			canvas.height = img.height;
 			console.log('Canvas sized to:', canvas.width, 'x', canvas.height);
+			
+			// Set original dimensions if not already set
+			if (originalWidth === 0 || originalHeight === 0) {
+				originalWidth = img.width;
+				originalHeight = img.height;
+			}
+			
 			ctx = canvas.getContext('2d');
 			drawCanvas();
 
 			// Preload next images
 			preloadImages(currentImageIndex);
 		} else {
-			// Load image normally
+			// Load image normally (compressed)
 			img = new Image();
 			img.onload = () => {
 				console.log('Image loaded successfully:', currentImage);
@@ -154,6 +183,13 @@
 				canvas.width = img.width;
 				canvas.height = img.height;
 				console.log('Canvas sized to:', canvas.width, 'x', canvas.height);
+				
+				// Set original dimensions if not already set
+				if (originalWidth === 0 || originalHeight === 0) {
+					originalWidth = img.width;
+					originalHeight = img.height;
+				}
+				
 				ctx = canvas.getContext('2d');
 				drawCanvas();
 
@@ -233,14 +269,30 @@
 		message = '';
 
 		try {
+			// Scale crop coordinates from displayed canvas size to original image size
+			const scaleX = originalWidth / canvas.width;
+			const scaleY = originalHeight / canvas.height;
+			const scaledCrop = {
+				x: Math.round(currentRect.x * scaleX),
+				y: Math.round(currentRect.y * scaleY),
+				width: Math.round(currentRect.width * scaleX),
+				height: Math.round(currentRect.height * scaleY)
+			};
+
+			console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
+			console.log('Original dimensions:', originalWidth, 'x', originalHeight);
+			console.log('Scale factors:', scaleX, 'x', scaleY);
+			console.log('Canvas crop:', currentRect);
+			console.log('Scaled crop:', scaledCrop);
+
 			const res = await fetch('/api/submit', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					filename: currentImage,
-					width: img.width,
-					height: img.height,
-					crop: currentRect,
+					width: originalWidth,
+					height: originalHeight,
+					crop: scaledCrop,
 					orientation: selectedOrientation,
 					userId
 				})
@@ -288,8 +340,8 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					filename: currentImage,
-					width: canvas.width,
-					height: canvas.height,
+					width: originalWidth,
+					height: originalHeight,
 					userId
 				})
 			});
