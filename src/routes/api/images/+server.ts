@@ -1,8 +1,9 @@
 import { json } from '@sveltejs/kit';
 import { readdir } from 'fs/promises';
 import type { RequestHandler } from './$types';
+import { env } from '$env/dynamic/private';
 
-const IMAGES_PATH = process.env.IMAGES_PATH || './static/images';
+const IMAGES_PATH = env.IMAGES_PATH || './data/images';
 
 export const GET: RequestHandler = async () => {
 	try {
