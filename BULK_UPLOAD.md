@@ -13,29 +13,29 @@ Upload multiple images to your posture cropping web app using the bulk upload AP
 
 ```json
 {
-  "images": [
-    {
-      "filename": "image1.jpg",
-      "imageData": "base64_encoded_image_data",
-      "width": 1920,
-      "height": 1080,
-      "crops": [
-        {
-          "user_id": "user123",
-          "x": 100,
-          "y": 200,
-          "width": 500,
-          "height": 800
-        }
-      ],
-      "orientations": [
-        {
-          "user_id": "user123",
-          "orientation": "front"
-        }
-      ]
-    }
-  ]
+	"images": [
+		{
+			"filename": "image1.jpg",
+			"imageData": "base64_encoded_image_data",
+			"width": 1920,
+			"height": 1080,
+			"crops": [
+				{
+					"user_id": "user123",
+					"x": 100,
+					"y": 200,
+					"width": 500,
+					"height": 800
+				}
+			],
+			"orientations": [
+				{
+					"user_id": "user123",
+					"orientation": "front"
+				}
+			]
+		}
+	]
 }
 ```
 
@@ -153,38 +153,43 @@ curl -X POST http://localhost:5174/api/v1/images/upload-bulk \
 ## Common Issues
 
 ### Upload taking a long time
+
 - This is normal for large batches (500+ images)
 - Server processes in chunks of 50 for memory efficiency
 - Check server logs to see progress: `Processing chunk X/Y...`
 - Each 50 images typically takes 10-30 seconds depending on size
 
 ### "Maximum 100 images per request"
+
 - This limit has been **removed** - upload unlimited images!
 - Old error message may appear in cached documentation
 
 ### "Invalid filename"
+
 - Filenames cannot contain `..`, `/`, or `\`
 - Use simple alphanumeric filenames with standard extensions
 
 ### "Failed to upload image"
+
 - Check that the image is valid and not corrupted
 - Ensure base64 encoding is correct
 - Verify file permissions on the images directory
 
 ### Authentication errors
+
 - Verify your API token is correct (check `.env` file)
 - Ensure token is included in `Authorization: Bearer <token>` header
 - Token must be listed in `API_TOKENS` environment variable
 
 ## Performance Tips
 
-1. **Batch Size**: 
+1. **Batch Size**:
    - 20-50 images per batch is optimal for network reliability
    - Server handles any size batch, but larger batches take longer
    - Smaller batches provide faster feedback on progress
    - Consider splitting very large uploads (10,000+) into multiple requests
 
-2. **Image Size**: 
+2. **Image Size**:
    - Consider resizing very large images before upload
    - Base64 encoding increases data size by ~33%
    - Compressed JPEGs work better than PNGs for photos
@@ -225,34 +230,34 @@ from PIL import Image
 
 def upload_images(image_paths: list, api_token: str):
     """Upload multiple images to the API"""
-    
+
     images = []
     for path in image_paths:
         # Get dimensions
         with Image.open(path) as img:
             width, height = img.size
-        
+
         # Encode to base64
         with open(path, 'rb') as f:
             image_data = base64.b64encode(f.read()).decode('utf-8')
-        
+
         images.append({
             'filename': os.path.basename(path),
             'imageData': image_data,
             'width': width,
             'height': height
         })
-    
+
     # Upload in batches of 10
     for i in range(0, len(images), 10):
         batch = images[i:i+10]
-        
+
         response = requests.post(
             'http://localhost:5174/api/v1/images/upload-bulk',
             headers={'Authorization': f'Bearer {api_token}'},
             json={'images': batch}
         )
-        
+
         if response.status_code == 200:
             result = response.json()
             print(f"Batch {i//10 + 1}: {result['successful']} successful")

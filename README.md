@@ -69,6 +69,7 @@ Visit http://localhost:5174 to start cropping and classifying images.
 Upload multiple images at once! See [QUICK_START_BULK.md](./QUICK_START_BULK.md) for a 2-minute guide.
 
 **Quick example:**
+
 ```bash
 # Add API token to .env
 echo "API_TOKENS=my-secret-token" >> .env
@@ -84,11 +85,13 @@ See [BULK_UPLOAD.md](./BULK_UPLOAD.md) for complete documentation.
 See [AUTH.md](./AUTH.md) for detailed authentication documentation.
 
 ### Web UI Access
+
 - Protected by `SITE_PASSWORD` when set
 - Login at `/login`
 - Session cookie-based authentication
 
 ### API Access
+
 - Protected by `API_TOKENS`
 - Use `Authorization: Bearer <token>` header
 - Access v1 endpoints: upload, download, list, data, bulk

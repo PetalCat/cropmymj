@@ -3,6 +3,7 @@
 ## Overview
 
 The application uses a dual authentication system:
+
 1. **Session-based authentication** for UI access (main page, image categorizing)
 2. **Bearer token authentication** for API v1 endpoints (upload, download, data)
 
@@ -16,12 +17,14 @@ API_TOKENS=token1,token2,token3
 ```
 
 ### SITE_PASSWORD
+
 - Used for web UI login
 - Users must enter this password at `/login` to access the main categorizing interface
 - Creates a hashed session cookie (`session_auth`)
 - Leave empty to disable password protection for the UI
 
 ### API_TOKENS
+
 - Comma-separated list of valid Bearer tokens
 - Used for programmatic access to `/api/v1/*` endpoints
 - Each token can be any string (recommend using UUIDs or long random strings)
@@ -30,11 +33,13 @@ API_TOKENS=token1,token2,token3
 ## Access Control
 
 ### Public Routes (No Authentication)
+
 - `/login` - Login page
 - `/api/login` - Login endpoint
 - `/api/logout` - Logout endpoint
 
 ### Session-Protected Routes (Requires SITE_PASSWORD login)
+
 - `/` - Main UI for image categorizing
 - `/api/images` - List images for UI
 - `/api/images/[filename]` - Serve images for UI
@@ -44,6 +49,7 @@ API_TOKENS=token1,token2,token3
 - `/api/consensus` - Get consensus data
 
 ### Token-Protected Routes (Requires API_TOKENS)
+
 - `/api/v1/images/upload` - Upload new images with crops/orientations
 - `/api/v1/images/upload-bulk` - **Upload multiple images in one request**
 - `/api/v1/images/list` - List all images with data
@@ -54,6 +60,7 @@ API_TOKENS=token1,token2,token3
 ## Usage Examples
 
 ### Web UI Access
+
 1. Navigate to `http://localhost:5174/`
 2. If password is set, you'll be redirected to `/login`
 3. Enter the `SITE_PASSWORD`
@@ -62,6 +69,7 @@ API_TOKENS=token1,token2,token3
 ### API Token Access
 
 Upload an image with crop data:
+
 ```bash
 curl -X POST http://localhost:5174/api/v1/images/upload \
   -H "Authorization: Bearer abc123" \
@@ -86,18 +94,21 @@ curl -X POST http://localhost:5174/api/v1/images/upload \
 ```
 
 Download consensus data:
+
 ```bash
 curl http://localhost:5174/api/v1/images/data?filename=test.jpg \
   -H "Authorization: Bearer abc123"
 ```
 
 List all images:
+
 ```bash
 curl http://localhost:5174/api/v1/images/list?include_data=true \
   -H "Authorization: Bearer abc123"
 ```
 
 Download original image:
+
 ```bash
 curl http://localhost:5174/api/v1/images/download/test.jpg \
   -H "Authorization: Bearer abc123" \
