@@ -15,6 +15,9 @@ COPY package*.json pnpm-lock.yaml ./
 # Install dependencies using pnpm
 RUN pnpm install --frozen-lockfile
 
+# Rebuild better-sqlite3 for Alpine Linux
+RUN pnpm rebuild better-sqlite3
+
 # Copy source code
 COPY . .
 
