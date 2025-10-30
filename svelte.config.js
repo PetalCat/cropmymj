@@ -8,10 +8,15 @@ const config = {
 	preprocess: vitePreprocess(),
 
 	kit: {
-		// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
-		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
-		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
-		adapter: adapter()
+		// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/integrations
+		// for more information about preprocessors
+		adapter: adapter({
+			// Increase body size limit for bulk image uploads
+			// Default is 512KB, we need more for base64 encoded images
+			out: 'build',
+			// Set body size limit to 100MB for bulk uploads
+			bodySizeLimit: 100 * 1024 * 1024 // 100MB in bytes
+		})
 	}
 };
 
