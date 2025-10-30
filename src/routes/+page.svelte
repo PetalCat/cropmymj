@@ -344,7 +344,8 @@
 											<img
 												src="/images/good.png"
 												alt="Good crop example"
-												onerror="this.style.display='none'"
+												on:error={(e) =>
+													((e.currentTarget as HTMLImageElement).style.display = 'none')}
 											/>
 										</div>
 										<span class="example-label">Good!</span>
@@ -354,7 +355,8 @@
 											<img
 												src="/images/needmoreshoulder.png"
 												alt="Need more shoulder example"
-												onerror="this.style.display='none'"
+												on:error={(e) =>
+													((e.currentTarget as HTMLImageElement).style.display = 'none')}
 											/>
 										</div>
 										<span class="example-label">Need More Shoulder</span>
@@ -364,7 +366,8 @@
 											<img
 												src="/images/toomanypeople.png"
 												alt="Too many people example"
-												onerror="this.style.display='none'"
+												on:error={(e) =>
+													((e.currentTarget as HTMLImageElement).style.display = 'none')}
 											/>
 										</div>
 										<span class="example-label">Too Many People</span>
@@ -374,7 +377,8 @@
 											<img
 												src="/images/unfit.png"
 												alt="Unfit image example"
-												onerror="this.style.display='none'"
+												on:error={(e) =>
+													((e.currentTarget as HTMLImageElement).style.display = 'none')}
 											/>
 										</div>
 										<span class="example-label">Unfit Image</span>
