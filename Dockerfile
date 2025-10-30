@@ -21,6 +21,9 @@ RUN cd node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm ru
 # Copy source code
 COPY . .
 
+# Create data directory for database before building
+RUN mkdir -p ./data
+
 # Build the application
 RUN pnpm run build
 
