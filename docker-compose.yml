@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  cropmymj:
+    build: .
+    image: cropmymj
+    container_name: cropmymj-container
+    ports:
+      - "8547:8547"
+    environment:
+      - PORT=8547
+      - HOST=0.0.0.0
+      # Uncomment and set these as needed:
+      # - SITE_PASSWORD=mysecurepassword
+      # - API_TOKENS=token1,token2
+      # - DB_PATH=/app/data/crops.db
+      # - IMAGES_PATH=/app/images
+    volumes:
+      # Persist database and images
+      - ./data:/app/data
+      - ./static/images:/app/images
+    restart: unless-stopped
