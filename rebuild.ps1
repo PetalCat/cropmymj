@@ -16,7 +16,7 @@ Write-Host "✓ Containers stopped and removed" -ForegroundColor Green
 Write-Host ""
 
 # Force rebuild with no cache
-Write-Host "[2/4] Building Docker image (no cache)..." -ForegroundColor Yellow
+Write-Host "[2/4] Building Docker image with no cache..." -ForegroundColor Yellow
 docker build --no-cache -t cropmymj .
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error building image" -ForegroundColor Red
