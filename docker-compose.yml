@@ -20,5 +20,5 @@ services:
     volumes:
       # Persist database and images
       - ./data:/app/data
-      - ./static/images:/app/images
+      - ./static/images:/app/static/images
     restart: unless-stopped
