@@ -36,8 +36,8 @@ COPY --from=builder /app/.svelte-kit ./.svelte-kit
 # Create directories for data and images
 RUN mkdir -p /app/data /app/images
 
-# Expose port
-EXPOSE 3000
+# Update exposed port to match app default
+EXPOSE 8547
 
 # Environment variables (can be overridden at runtime)
 ENV NODE_ENV=production
