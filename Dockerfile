@@ -3,9 +3,6 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install build dependencies for native modules (better-sqlite3)
-RUN apk add --no-cache python3 make g++
-
 # Install pnpm globally
 RUN npm install -g pnpm
 
@@ -15,8 +12,9 @@ COPY package*.json pnpm-lock.yaml ./
 # Install dependencies using pnpm
 RUN pnpm install --frozen-lockfile
 
-# Rebuild better-sqlite3 with node-gyp directly in the pnpm store
-RUN cd node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release
+# Copy Prisma schema and generate client
+COPY prisma ./prisma
+RUN pnpm prisma generate
 
 # Copy source code
 COPY . .
@@ -32,20 +30,18 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install runtime dependencies for better-sqlite3
-RUN apk add --no-cache python3 make g++
-
 # Install pnpm globally in the production stage
 RUN npm install -g pnpm
 
 # Copy package files
 COPY package*.json pnpm-lock.yaml ./
 
-# Install ALL dependencies (including dev dependencies needed for native module building)
+# Install ALL dependencies
 RUN pnpm install --frozen-lockfile
 
-# Rebuild better-sqlite3 with node-gyp directly in the pnpm store
-RUN cd node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release
+# Copy Prisma schema and generate client for production
+COPY prisma ./prisma
+RUN pnpm prisma generate
 
 # Copy built application from builder
 COPY --from=builder /app/build ./build
