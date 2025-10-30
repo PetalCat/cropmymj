@@ -51,13 +51,11 @@ COPY --from=builder /app/.svelte-kit ./.svelte-kit
 # Create directories for data and images
 RUN mkdir -p /app/data /app/images
 
-# Expose port
+# Expose port (default, can be changed at runtime)
 EXPOSE 8547
 
 # Environment variables (can be overridden at runtime)
 ENV NODE_ENV=production
-ENV PORT=8547
-ENV HOST=0.0.0.0
 
 # Start the application
 CMD ["node", "build"]
