@@ -27,6 +27,10 @@ data/*.db
 data/*.db-shm
 data/*.db-wal
 
+# Images - keep directory structure but ignore actual images
+static/images/*
+!static/images/README.md
+
 # Logs
 *.log
 logs/
