@@ -15,6 +15,7 @@ services:
       - HOST=${HOST:-0.0.0.0}
       - SITE_PASSWORD=${SITE_PASSWORD}
       - API_TOKENS=${API_TOKENS}
+      - DATABASE_URL=${DATABASE_URL:-file:./data/crops.db}
       - DB_PATH=${DB_PATH:-./data/crops.db}
       - IMAGES_PATH=${IMAGES_PATH:-./static/images}
     volumes:
