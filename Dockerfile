@@ -6,8 +6,11 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Install dependencies using pnpm
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
@@ -23,8 +26,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install production dependencies only
-RUN npm ci --production
+# Install production dependencies using pnpm
+RUN pnpm install --prod --frozen-lockfile
 
 # Copy built application from builder
 COPY --from=builder /app/build ./build
