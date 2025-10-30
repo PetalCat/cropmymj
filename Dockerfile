@@ -44,6 +44,9 @@ COPY package*.json pnpm-lock.yaml ./
 # Install production dependencies using pnpm
 RUN pnpm install --prod --frozen-lockfile
 
+# Rebuild better-sqlite3 for the production container architecture
+RUN cd node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && npm run build-release
+
 # Copy built application from builder
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/.svelte-kit ./.svelte-kit
