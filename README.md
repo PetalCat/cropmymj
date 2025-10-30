@@ -28,14 +28,20 @@ mkdir -p data static/images
 
 3. Place your images in `static/images/`
 
-4. Configure environment variables (optional):
+4. Configure environment variables:
 
 ```bash
 cp .env.example .env
-# Edit .env if you want custom paths
+# Edit .env to customize:
+# - PORT (default: 3000)
+# - HOST (default: 0.0.0.0)
+# - DB_PATH (default: ./data/crops.db)
+# - IMAGES_PATH (default: ./static/images)
 ```
 
 ## Running the App
+
+### Development Mode
 
 Start the development server:
 
@@ -44,6 +50,23 @@ pnpm run dev
 ```
 
 Visit http://localhost:5173 to start cropping and classifying images.
+
+### Production Mode
+
+Build and run in production:
+
+```bash
+# Build the application
+pnpm run build
+
+# Start the production server
+pnpm start
+# Or use the startup script
+./start.sh
+```
+
+The production server will run on the port specified in `.env` (default: 3000).
+Visit http://localhost:3000
 
 ## Using Consensus Data in Python
 

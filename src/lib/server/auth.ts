@@ -1,8 +1,9 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
-import { API_TOKENS as API_TOKENS_ENV, SITE_PASSWORD } from '$env/static/private';
 import crypto from 'crypto';
 
+const API_TOKENS_ENV = process.env.API_TOKENS || '';
+const SITE_PASSWORD = process.env.SITE_PASSWORD || '';
 const API_TOKENS = API_TOKENS_ENV.split(',').filter((t) => t.trim());
 const PASSWORD_ENABLED = SITE_PASSWORD && SITE_PASSWORD.length > 0;
 
