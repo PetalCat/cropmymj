@@ -22,6 +22,9 @@ COPY . .
 # Create data directory for database before building
 RUN mkdir -p ./data
 
+# Set DATABASE_URL for build time (Prisma needs it)
+ENV DATABASE_URL="file:./data/crops.db"
+
 # Build the application
 RUN pnpm run build
 
@@ -55,6 +58,7 @@ EXPOSE 8547
 
 # Environment variables (can be overridden at runtime)
 ENV NODE_ENV=production
+ENV DATABASE_URL="file:./data/crops.db"
 
 # Start the application
 CMD ["node", "build"]
