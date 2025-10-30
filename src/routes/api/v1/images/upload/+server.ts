@@ -2,10 +2,12 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { validateApiToken } from '$lib/server/auth';
 import prisma from '$lib/server/db';
-import { IMAGES_PATH } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+
+const IMAGES_PATH = env.IMAGES_PATH || './static/images';
 
 /**
  * POST /api/v1/images/upload
