@@ -17,6 +17,7 @@ API_TOKENS=my-secret-token-123
 ```
 
 💡 **Tip**: Use a strong random token. Generate one with:
+
 ```bash
 openssl rand -hex 32
 ```
@@ -70,21 +71,25 @@ python3 bulk_upload.py /path/to/your/photos --token my-secret-token-123 --batch-
 ## Examples
 
 **Upload from a USB drive:**
+
 ```bash
 ./bulk_upload.sh /Volumes/MyUSB/Photos my-secret-token-123
 ```
 
 **Upload from Downloads folder:**
+
 ```bash
 ./bulk_upload.sh ~/Downloads/posture-photos my-secret-token-123
 ```
 
 **Upload with custom batch size (5 at a time):**
+
 ```bash
 BATCH_SIZE=5 ./bulk_upload.sh ~/Pictures my-secret-token-123
 ```
 
 **Dry run to see what would be uploaded:**
+
 ```bash
 python3 bulk_upload.py ~/Pictures --token my-secret-token-123 --dry-run
 ```
@@ -101,20 +106,24 @@ curl -H "Authorization: Bearer my-secret-token-123" \
 ## Troubleshooting
 
 ### "Authorization failed"
+
 - Check that your token in `.env` matches what you're using
 - Restart the dev server after changing `.env`
 
 ### "No images found"
+
 - Check the directory path is correct
 - Verify it contains .jpg, .png, .gif, or .webp files
 - File extensions are case-sensitive on Linux
 
 ### "Failed to upload image"
+
 - Check disk space on your server
 - Verify `./static/images` directory exists and is writable
 - Check server logs for detailed error messages
 
 ### Script not running
+
 - Make sure scripts are executable: `chmod +x *.sh`
 - For Python script: ensure Python 3.7+ is installed
 
@@ -123,7 +132,7 @@ curl -H "Authorization: Bearer my-secret-token-123" \
 After uploading, you can:
 
 1. **View images on the web UI**: http://localhost:5174 (login with your SITE_PASSWORD)
-2. **Get image data via API**: 
+2. **Get image data via API**:
    ```bash
    curl -H "Authorization: Bearer my-secret-token-123" \
      "http://localhost:5174/api/v1/images/data?filename=image.jpg"

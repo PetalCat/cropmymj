@@ -19,7 +19,8 @@
 	let totalImages = 0;
 
 	$: currentImage = images[currentImageIndex];
-	$: progressPercentage = totalImages > 0 ? Math.round((userSubmissionCount / totalImages) * 100) : 0;
+	$: progressPercentage =
+		totalImages > 0 ? Math.round((userSubmissionCount / totalImages) * 100) : 0;
 
 	async function fetchUserProgress() {
 		try {
@@ -59,7 +60,7 @@
 				// Start with a random image
 				currentImageIndex = Math.floor(Math.random() * images.length);
 				console.log('Starting with random image index:', currentImageIndex);
-				
+
 				// Wait for DOM to update
 				await tick();
 				console.log('About to load first image, canvas bound:', !!canvas);
@@ -93,7 +94,7 @@
 				console.error('Canvas element not found!');
 				return;
 			}
-			
+
 			canvas.width = img.width;
 			canvas.height = img.height;
 			console.log('Canvas sized to:', canvas.width, 'x', canvas.height);
@@ -139,7 +140,7 @@
 		const rect = canvas.getBoundingClientRect();
 		const scaleX = canvas.width / rect.width;
 		const scaleY = canvas.height / rect.height;
-		
+
 		// Clamp coordinates to canvas bounds
 		const x = Math.max(0, Math.min((e.clientX - rect.left) * scaleX, canvas.width));
 		const y = Math.max(0, Math.min((e.clientY - rect.top) * scaleY, canvas.height));
@@ -218,7 +219,7 @@
 
 	async function handleSkipUnfit() {
 		if (!currentImage || !canvas) return;
-		
+
 		loading = true;
 		try {
 			const response = await fetch('/api/unfit', {
@@ -235,8 +236,10 @@
 			if (response.ok) {
 				message = 'Marked as unfit - showing next image';
 				userSubmissionCount++; // Increment progress counter for unfit marks too
-				setTimeout(() => { message = ''; }, 2000);
-				
+				setTimeout(() => {
+					message = '';
+				}, 2000);
+
 				// Go to a random image after a short delay
 				setTimeout(async () => {
 					currentImageIndex = Math.floor(Math.random() * images.length);
@@ -264,19 +267,19 @@
 	<!-- Compact Header with Progress Bar -->
 	<div class="top-bar">
 		<h1>🎯 Crop My MJ</h1>
-		
+
 		<div class="image-counter">#{currentImageIndex + 1}</div>
-		
+
 		<div class="user-progress-compact">
-			<span class="progress-text-compact">{userSubmissionCount}/{totalImages} ({progressPercentage}%)</span>
+			<span class="progress-text-compact"
+				>{userSubmissionCount}/{totalImages} ({progressPercentage}%)</span
+			>
 			<div class="user-progress-bar-compact">
 				<div class="user-progress-fill" style="width: {progressPercentage}%"></div>
 			</div>
 		</div>
 
-		<button on:click={handleLogout} class="logout-btn-compact" title="Logout">
-			🚪
-		</button>
+		<button on:click={handleLogout} class="logout-btn-compact" title="Logout"> 🚪 </button>
 	</div>
 
 	{#if images.length === 0}
@@ -302,7 +305,10 @@
 
 			<div class="right-panel">
 				<div class="guidelines">
-					<button class="guidelines-header" on:click={() => guidelinesExpanded = !guidelinesExpanded}>
+					<button
+						class="guidelines-header"
+						on:click={() => (guidelinesExpanded = !guidelinesExpanded)}
+					>
 						<div class="header-content">
 							<span class="check-icon" class:checked={!guidelinesExpanded}>
 								{#if guidelinesExpanded}
@@ -315,7 +321,7 @@
 						</div>
 						<span class="toggle-icon">{guidelinesExpanded ? '▼' : '▶'}</span>
 					</button>
-					
+
 					{#if guidelinesExpanded}
 						<div class="guidelines-content">
 							<div class="guideline-item">
@@ -391,9 +397,7 @@
 						<p><strong>🚫 Unfit</strong> if Matthew's shoulders/head are not clearly visible</p>
 					</div>
 					<div class="action-buttons">
-						<button class="btn btn-skip" on:click={handleSkip} disabled={loading}>
-							⏭ Skip
-						</button>
+						<button class="btn btn-skip" on:click={handleSkip} disabled={loading}> ⏭ Skip </button>
 						<button class="btn btn-unfit" on:click={handleSkipUnfit} disabled={loading}>
 							🚫 Unfit
 						</button>
@@ -429,7 +433,8 @@
 		max-width: 1400px;
 		margin: 0 auto;
 		padding: 1rem;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+		font-family:
+			-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 		height: 100vh;
 		display: flex;
 		flex-direction: column;
@@ -539,18 +544,17 @@
 		left: 0;
 		bottom: 0;
 		right: 0;
-		background: linear-gradient(
-			90deg,
-			transparent,
-			rgba(255, 255, 255, 0.3),
-			transparent
-		);
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
 		animation: shimmer 2s infinite;
 	}
 
 	@keyframes shimmer {
-		0% { transform: translateX(-100%); }
-		100% { transform: translateX(100%); }
+		0% {
+			transform: translateX(-100%);
+		}
+		100% {
+			transform: translateX(100%);
+		}
 	}
 
 	/* Old styles - can be removed */
@@ -600,8 +604,12 @@
 	}
 
 	@keyframes spin {
-		0% { transform: rotate(0deg); }
-		100% { transform: rotate(360deg); }
+		0% {
+			transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(360deg);
+		}
 	}
 
 	@keyframes fadeInDown {

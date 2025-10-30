@@ -7,10 +7,12 @@ Successfully migrated from `better-sqlite3` to Prisma ORM for cleaner, type-safe
 ## What Changed
 
 ### Database Layer
+
 - **Before**: Direct SQL with `better-sqlite3` and prepared statements
 - **After**: Prisma ORM with type-safe queries and automatic migrations
 
 ### Schema Definition
+
 - Created `prisma/schema.prisma` with 4 models:
   - `Image` - Stores image metadata
   - `Crop` - Stores user crop submissions
@@ -18,6 +20,7 @@ Successfully migrated from `better-sqlite3` to Prisma ORM for cleaner, type-safe
   - `Unfit` - Stores unfit image markings
 
 ### Field Naming
+
 - Using **snake_case** for database columns and TypeScript fields
 - Fields: `image_id`, `user_id`, `created_at`
 - Consistent naming eliminates @map directives
@@ -25,12 +28,14 @@ Successfully migrated from `better-sqlite3` to Prisma ORM for cleaner, type-safe
 ### Migrated Endpoints
 
 #### Core API Routes (Session-protected)
+
 - ✅ `/api/submit` - Submit crop and orientation data
 - ✅ `/api/unfit` - Mark image as unfit
 - ✅ `/api/user-progress` - Get user progress
 - ✅ `/api/consensus` - Get consensus crop/orientation
 
 #### V1 API Routes (Token-protected)
+
 - ✅ `/api/v1/images/upload` - Upload images with data
 - ✅ `/api/v1/images/list` - List all images
 - ✅ `/api/v1/images/data` - Get image data
@@ -40,6 +45,7 @@ Successfully migrated from `better-sqlite3` to Prisma ORM for cleaner, type-safe
 ## Usage
 
 ### Development
+
 ```bash
 # Generate Prisma client after schema changes
 pnpm prisma generate
@@ -54,26 +60,31 @@ pnpm prisma studio
 ### Example Query Patterns
 
 **Before (better-sqlite3)**:
+
 ```typescript
-const stmt = db.prepare('INSERT INTO crops (image_id, user_id, x, y, width, height) VALUES (?, ?, ?, ?, ?, ?)');
+const stmt = db.prepare(
+	'INSERT INTO crops (image_id, user_id, x, y, width, height) VALUES (?, ?, ?, ?, ?, ?)'
+);
 stmt.run(imageId, userId, x, y, width, height);
 ```
 
 **After (Prisma)**:
+
 ```typescript
 await prisma.crop.create({
-  data: {
-    image_id: imageId,
-    user_id: userId,
-    x,
-    y,
-    width,
-    height
-  }
+	data: {
+		image_id: imageId,
+		user_id: userId,
+		x,
+		y,
+		width,
+		height
+	}
 });
 ```
 
 **Transactions**:
+
 ```typescript
 await prisma.$transaction([
   prisma.crop.create({ data: { ... } }),
@@ -82,14 +93,15 @@ await prisma.$transaction([
 ```
 
 **Relations**:
+
 ```typescript
 const image = await prisma.image.findUnique({
-  where: { filename: 'test.jpg' },
-  include: {
-    crops: true,
-    orientations: true,
-    unfits: true
-  }
+	where: { filename: 'test.jpg' },
+	include: {
+		crops: true,
+		orientations: true,
+		unfits: true
+	}
 });
 ```
 
@@ -108,6 +120,7 @@ const image = await prisma.image.findUnique({
 Location: `./data/crops.db` (SQLite)
 
 Configure via `.env`:
+
 ```env
 DATABASE_URL="file:./data/crops.db"
 ```
@@ -115,6 +128,7 @@ DATABASE_URL="file:./data/crops.db"
 ## Build Process
 
 The Prisma client is automatically generated during build:
+
 ```json
 "scripts": {
   "build": "prisma generate && vite build"
@@ -136,6 +150,7 @@ pnpm prisma migrate deploy
 ## Rollback Plan
 
 If needed, revert to better-sqlite3:
+
 1. Restore `src/lib/server/db.ts` from git history
 2. Restore old API endpoint files
 3. Remove `prisma/` directory

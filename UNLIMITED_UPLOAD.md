@@ -5,15 +5,18 @@ Your bulk upload system now supports **UNLIMITED images** per request!
 ## What Changed
 
 ### ✅ Removed Upload Limits
+
 - **Before**: Maximum 100 images per request
 - **After**: No limit - upload as many as you need!
 
 ### ✅ Smart Memory Management
+
 - Server processes images in chunks of 50
 - Prevents memory issues with very large batches
 - Progress logged to console for monitoring
 
 ### ✅ Improved Performance
+
 - Default batch size increased from 5 to 20
 - Better concurrency in shell script
 - Enhanced progress reporting in Python script
@@ -33,12 +36,14 @@ python3 bulk_upload.py /huge/photo/collection --token my-token --batch-size 50
 ### Performance Tips by Scale
 
 **< 100 images:**
+
 ```bash
 ./bulk_upload.sh /photos my-token
 # Fast and simple
 ```
 
 **100-1,000 images:**
+
 ```bash
 BATCH_SIZE=30 ./bulk_upload.sh /photos my-token
 # Or use Python for better progress tracking
@@ -46,12 +51,14 @@ python3 bulk_upload.py /photos --token my-token --batch-size 30
 ```
 
 **1,000-10,000 images:**
+
 ```bash
 # Larger batches for efficiency
 python3 bulk_upload.py /photos --token my-token --batch-size 50
 ```
 
 **10,000+ images:**
+
 ```bash
 # Consider splitting into multiple runs for best reliability
 # But if you want to do it all at once:
@@ -61,6 +68,7 @@ python3 bulk_upload.py /photos --token my-token --batch-size 100
 ## Server Processing
 
 The server automatically:
+
 1. Accepts any number of images in one request
 2. Processes them in chunks of 50 (internal)
 3. Logs progress: `Processing chunk X/Y...`
@@ -69,6 +77,7 @@ The server automatically:
 ## Monitoring Large Uploads
 
 Watch server logs in real-time:
+
 ```bash
 # In one terminal, start server
 pnpm run dev
@@ -119,18 +128,20 @@ Approximate upload times (depends on image size and connection):
 ## Technical Details
 
 ### Request Format
+
 ```json
 {
-  "images": [
-    // No limit on array size!
-    {"filename": "img1.jpg", "imageData": "...", "width": 1920, "height": 1080},
-    {"filename": "img2.jpg", "imageData": "...", "width": 1920, "height": 1080},
-    // ... thousands more ...
-  ]
+	"images": [
+		// No limit on array size!
+		{ "filename": "img1.jpg", "imageData": "...", "width": 1920, "height": 1080 },
+		{ "filename": "img2.jpg", "imageData": "...", "width": 1920, "height": 1080 }
+		// ... thousands more ...
+	]
 }
 ```
 
 ### Response Format
+
 ```json
 {
   "success": true,
@@ -149,16 +160,19 @@ Approximate upload times (depends on image size and connection):
 ## Troubleshooting
 
 ### Upload seems stuck
+
 - Check server logs - it's likely processing
 - Each 50-image chunk takes 10-30 seconds
 - Be patient with large batches
 
 ### Out of memory errors
+
 - Reduce client batch size: `--batch-size 20`
 - Server handles memory automatically
 - Consider more RAM if uploading 100MB+ images
 
 ### Timeout errors
+
 - Increase timeout in scripts (already 300s for Python)
 - Split very large uploads into 2-3 separate runs
 - Check network stability
@@ -166,6 +180,7 @@ Approximate upload times (depends on image size and connection):
 ## Need Help?
 
 See complete documentation:
+
 - [BULK_UPLOAD.md](./BULK_UPLOAD.md) - Full API docs
 - [QUICK_START_BULK.md](./QUICK_START_BULK.md) - Quick start guide
 - [AUTH.md](./AUTH.md) - Authentication setup
