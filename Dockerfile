@@ -50,11 +50,8 @@ RUN pnpm prisma generate
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/.svelte-kit ./.svelte-kit
 
-# Copy static files (for example images and other static assets)
-COPY static ./static
-
-# Create directories for data and images
-RUN mkdir -p /app/data/images
+# Create directories for data and example images
+RUN mkdir -p /app/data/images /app/build/client/images
 
 # Expose port (default, can be changed at runtime)
 EXPOSE 8547

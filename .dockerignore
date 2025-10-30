@@ -20,9 +20,13 @@ dist
 /data/
 /data/**
 
-# Exclude static images
-static/images/
-static/images/**
+# Exclude static images EXCEPT the example images
+static/images/*
+!static/images/good.png
+!static/images/needmoreshoulder.png
+!static/images/toomanypeople.png
+!static/images/unfit.png
+!static/images/README.md
 
 # Exclude exports
 exports/
