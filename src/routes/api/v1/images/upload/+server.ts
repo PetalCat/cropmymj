@@ -2,10 +2,11 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { validateApiToken } from '$lib/server/auth';
 import db from '$lib/server/db';
-import { IMAGES_DIR } from '$env/static/private';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+
+const IMAGES_DIR = process.env.IMAGES_PATH || './static/images';
 
 interface ImageRow {
 	id: number;

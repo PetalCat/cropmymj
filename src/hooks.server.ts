@@ -1,7 +1,11 @@
 import type { Handle } from '@sveltejs/kit';
 import { startNormalizer } from '$lib/server/normalizer';
-import { SITE_PASSWORD, DB_PATH, API_TOKENS, IMAGES_DIR } from '$env/static/private';
 import crypto from 'crypto';
+
+const SITE_PASSWORD = process.env.SITE_PASSWORD || '';
+const DB_PATH = process.env.DB_PATH || './data/crops.db';
+const API_TOKENS = process.env.API_TOKENS || '';
+const IMAGES_DIR = process.env.IMAGES_PATH || './static/images';
 
 // Start the image normalizer service when server starts
 if (typeof window === 'undefined') {

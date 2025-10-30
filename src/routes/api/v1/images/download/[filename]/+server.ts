@@ -1,9 +1,10 @@
 import type { RequestHandler } from './$types';
 import { error } from '@sveltejs/kit';
 import { validateApiToken } from '$lib/server/auth';
-import { IMAGES_DIR } from '$env/static/private';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+
+const IMAGES_DIR = process.env.IMAGES_PATH || './static/images';
 
 /**
  * GET /api/v1/images/download/[filename]

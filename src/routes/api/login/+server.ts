@@ -1,7 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { SITE_PASSWORD } from '$env/static/private';
 import crypto from 'crypto';
+
+const SITE_PASSWORD = process.env.SITE_PASSWORD || '';
 
 function hashPassword(password: string): string {
 	return crypto.createHash('sha256').update(password).digest('hex');

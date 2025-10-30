@@ -12,7 +12,7 @@ from typing import Dict, Any, Optional
 class CropConsensusAPI:
     """Client for fetching consensus crop data from the web app."""
     
-    def __init__(self, base_url: str = "http://localhost:5173"):
+    def __init__(self, base_url: str = "http://localhost:3000"):
         self.base_url = base_url.rstrip('/')
     
     def get_consensus(self, filename: str) -> Optional[Dict[str, Any]]:
