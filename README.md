@@ -36,7 +36,7 @@ pnpm install
 ```bash
 cat > .env << 'EOF'
 DATABASE_URL="file:./data/crops.db"
-IMAGES_PATH=./static/images
+IMAGES_PATH=./data/images
 SITE_PASSWORD=your-secure-password
 API_TOKENS=token1,token2,token3
 EOF
@@ -45,7 +45,7 @@ EOF
 3. Create required directories:
 
 ```bash
-mkdir -p data static/images
+mkdir -p data/images
 ```
 
 4. Initialize database:
@@ -54,9 +54,7 @@ mkdir -p data static/images
 pnpm prisma db push
 ```
 
-5. Place your images in `static/images/`
-
-6. Start development server:
+5. Start development server:
 
 ```bash
 pnpm run dev
@@ -165,10 +163,10 @@ if consensus:
 │           ├── images/+server.ts  # List images endpoint
 │           ├── submit/+server.ts  # Submit crop endpoint
 │           └── consensus/+server.ts # Get consensus endpoint
-├── static/
-│   └── images/                    # Place images here
+├── static/                        # Static web assets only (logos, CSS, etc)
 ├── data/
-│   └── crops.db                   # SQLite database (auto-created)
+│   ├── crops.db                   # SQLite database (auto-created)
+│   └── images/                    # Uploaded images stored here
 └── fetch_consensus.py             # Python client for API
 ```
 

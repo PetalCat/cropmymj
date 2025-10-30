@@ -38,7 +38,7 @@ The server should start on http://localhost:5174
 ./test_bulk_upload.sh my-secret-token-123
 ```
 
-This will upload the first 3 images from `./static/images` to verify everything works.
+This will upload the first 3 images from `./data/images` to verify everything works.
 
 ### Option B: Upload All Images from a Directory
 
@@ -119,7 +119,7 @@ curl -H "Authorization: Bearer my-secret-token-123" \
 ### "Failed to upload image"
 
 - Check disk space on your server
-- Verify `./static/images` directory exists and is writable
+- Verify `./data/images` directory exists and is writable
 - Check server logs for detailed error messages
 
 ### Script not running

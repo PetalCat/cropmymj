@@ -6,7 +6,7 @@ import crypto from 'crypto';
 const SITE_PASSWORD = env.SITE_PASSWORD || '';
 const DB_PATH = env.DB_PATH || './data/crops.db';
 const API_TOKENS = env.API_TOKENS || '';
-const IMAGES_PATH = env.IMAGES_PATH || './static/images';
+const IMAGES_PATH = env.IMAGES_PATH || './data/images';
 
 // Start the image normalizer service when server starts
 if (typeof window === 'undefined') {
