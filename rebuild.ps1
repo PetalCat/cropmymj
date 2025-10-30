@@ -7,7 +7,7 @@ Write-Host ""
 
 # Stop and remove everything
 Write-Host "[1/4] Stopping and removing existing containers..." -ForegroundColor Yellow
-docker-compose down -v
+docker-compose down
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error stopping containers" -ForegroundColor Red
     exit 1
