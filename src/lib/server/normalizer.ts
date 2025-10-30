@@ -1,12 +1,12 @@
 import { watch } from 'fs';
-import { readdir, copyFile, stat } from 'fs/promises';
+import { readdir, copyFile, stat, access } from 'fs/promises';
 import { join } from 'path';
 import { spawn } from 'child_process';
 
-const UNFILTERED_DIR = join(process.cwd(), '..', 'set-unfiltered-uncropped');
-const NORMAL_DIR = join(process.cwd(), '..', 'normal-set');
-const PYTHON_SCRIPT = join(process.cwd(), '..', 'normalize_image.py');
-const PYTHON_VENV = join(process.cwd(), '..', '.venv', 'bin', 'python');
+const UNFILTERED_DIR = process.env.UNFILTERED_DIR || join(process.cwd(), '..', 'set-unfiltered-uncropped');
+const NORMAL_DIR = process.env.NORMAL_DIR || join(process.cwd(), '..', 'normal-set');
+const PYTHON_SCRIPT = process.env.PYTHON_SCRIPT || join(process.cwd(), '..', 'normalize_image.py');
+const PYTHON_VENV = process.env.PYTHON_VENV || join(process.cwd(), '..', '.venv', 'bin', 'python');
 
 // Track processed files to avoid re-processing
 const processedFiles = new Set<string>();
@@ -93,7 +93,18 @@ async function processExistingFiles() {
 /**
  * Start watching the unfiltered directory for new files
  */
-export function startNormalizer() {
+export async function startNormalizer() {
+	// Check if directories exist before starting
+	try {
+		await access(UNFILTERED_DIR);
+		await access(NORMAL_DIR);
+	} catch (err) {
+		console.log('ℹ️  Normalizer directories not found, skipping normalizer service');
+		console.log(`   Expected: ${UNFILTERED_DIR} and ${NORMAL_DIR}`);
+		console.log('   Set UNFILTERED_DIR and NORMAL_DIR environment variables if needed');
+		return;
+	}
+
 	console.log(`👁️  Watching: ${UNFILTERED_DIR}`);
 	console.log(`📤 Output to: ${NORMAL_DIR}`);
 
