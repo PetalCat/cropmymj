@@ -5,12 +5,14 @@
 ### Option 1: Using docker-compose (Recommended)
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/PetalCat/cropmymj.git
    cd cropmymj
    ```
 
 2. **Start the application**:
+
    ```bash
    docker-compose up -d
    ```
@@ -19,6 +21,7 @@
    Open your browser to `http://localhost:8547`
 
 4. **View logs**:
+
    ```bash
    docker-compose logs -f
    ```
@@ -31,11 +34,13 @@
 ### Option 2: Using Docker commands
 
 1. **Build the image**:
+
    ```bash
    docker build -t cropmymj .
    ```
 
 2. **Run with default settings**:
+
    ```bash
    docker run -d -p 8547:8547 \
      -e PORT=8547 \
@@ -44,6 +49,7 @@
    ```
 
 3. **Run with custom environment variables**:
+
    ```bash
    docker run -d -p 8547:8547 \
      -e PORT=8547 \
