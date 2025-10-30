@@ -30,10 +30,16 @@
 
 	async function fetchUserProgress() {
 		try {
+			console.log('Fetching user progress for userId:', userId);
 			const res = await fetch(`/api/user-progress?userId=${userId}`);
+			console.log('User progress response status:', res.status);
 			if (res.ok) {
 				const data = await res.json();
+				console.log('User progress data:', data);
 				userSubmissionCount = data.submissionCount || 0;
+				console.log('Set userSubmissionCount to:', userSubmissionCount);
+			} else {
+				console.error('Failed to fetch user progress, status:', res.status);
 			}
 		} catch (error) {
 			console.error('Failed to fetch user progress:', error);
