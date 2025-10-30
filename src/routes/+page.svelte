@@ -43,7 +43,7 @@
 		for (let i = 1; i <= PRELOAD_COUNT; i++) {
 			const index = (centerIndex + i) % images.length;
 			const filename = images[index];
-			
+
 			if (filename && !imageCache.has(filename)) {
 				const preloadImg = new Image();
 				preloadImg.src = `/api/images/${filename}`;
@@ -60,7 +60,7 @@
 		// Clean up old cached images (keep only 10 most recent)
 		if (imageCache.size > 10) {
 			const toDelete = Array.from(imageCache.keys()).slice(0, imageCache.size - 10);
-			toDelete.forEach(key => {
+			toDelete.forEach((key) => {
 				imageCache.delete(key);
 				console.log(`Removed from cache: ${key}`);
 			});
@@ -119,7 +119,7 @@
 
 		console.log('Loading image:', currentImage);
 		message = ''; // Clear previous messages
-		
+
 		// Check if image is already cached
 		if (imageCache.has(currentImage)) {
 			console.log('Using cached image:', currentImage);
@@ -133,7 +133,7 @@
 			console.log('Canvas sized to:', canvas.width, 'x', canvas.height);
 			ctx = canvas.getContext('2d');
 			drawCanvas();
-			
+
 			// Preload next images
 			preloadImages(currentImageIndex);
 		} else {
@@ -142,10 +142,10 @@
 			img.onload = () => {
 				console.log('Image loaded successfully:', currentImage);
 				console.log('Image dimensions:', img.width, 'x', img.height);
-				
+
 				// Cache the loaded image
 				imageCache.set(currentImage, img);
-				
+
 				if (!canvas) {
 					console.error('Canvas element not found!');
 					return;
@@ -156,7 +156,7 @@
 				console.log('Canvas sized to:', canvas.width, 'x', canvas.height);
 				ctx = canvas.getContext('2d');
 				drawCanvas();
-				
+
 				// Preload next images
 				preloadImages(currentImageIndex);
 			};
@@ -167,7 +167,7 @@
 			img.src = `/api/images/${currentImage}`;
 			console.log('Image src set to:', img.src);
 		}
-		
+
 		selectedOrientation = null;
 		currentRect = { x: 0, y: 0, width: 0, height: 0 };
 	}
