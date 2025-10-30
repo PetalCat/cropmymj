@@ -341,25 +341,41 @@
 								<div class="example-grid">
 									<div class="example-item">
 										<div class="example-placeholder good">
-											<img src="/images/good.png" alt="Good crop example" onerror="this.style.display='none'" />
+											<img
+												src="/images/good.png"
+												alt="Good crop example"
+												onerror="this.style.display='none'"
+											/>
 										</div>
 										<span class="example-label">Good!</span>
 									</div>
 									<div class="example-item">
 										<div class="example-placeholder warning">
-											<img src="/images/needmoreshoulder.png" alt="Need more shoulder example" onerror="this.style.display='none'" />
+											<img
+												src="/images/needmoreshoulder.png"
+												alt="Need more shoulder example"
+												onerror="this.style.display='none'"
+											/>
 										</div>
 										<span class="example-label">Need More Shoulder</span>
 									</div>
 									<div class="example-item">
 										<div class="example-placeholder bad">
-											<img src="/images/toomanypeople.png" alt="Too many people example" onerror="this.style.display='none'" />
+											<img
+												src="/images/toomanypeople.png"
+												alt="Too many people example"
+												onerror="this.style.display='none'"
+											/>
 										</div>
 										<span class="example-label">Too Many People</span>
 									</div>
 									<div class="example-item">
 										<div class="example-placeholder unfit">
-											<img src="/images/unfit.png" alt="Unfit image example" onerror="this.style.display='none'" />
+											<img
+												src="/images/unfit.png"
+												alt="Unfit image example"
+												onerror="this.style.display='none'"
+											/>
 										</div>
 										<span class="example-label">Unfit Image</span>
 									</div>
