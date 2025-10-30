@@ -74,28 +74,21 @@ def prepare_image_data(image_path: str, user_id: Optional[str] = None) -> Dict:
     
     return data
 
-def upload_bulk(
-    api_url: str,
-    api_token: str,
-    images: List[Dict],
-    batch_size: int = 10
-) -> Dict:
-    """Upload images in batches with automatic retry on payload too large."""
+def upload_bulk(api_url, token, images, batch_size=1):
+    """Upload images in batches to the bulk upload endpoint."""
     headers = {
-        'Authorization': f'Bearer {api_token}',
+        'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json'
     }
     
     total_successful = 0
+    total_skipped = 0
     total_failed = 0
     all_results = []
+    
+    i = 0
     current_batch_size = batch_size
     
-    print(f"\n🚀 Uploading {len(images)} images in batches of {batch_size}...")
-    print(f"📦 Server processes in chunks of 50 for memory efficiency.\n")
-    
-    # Process in batches
-    i = 0
     while i < len(images):
         batch = images[i:i + current_batch_size]
         batch_num = (i // batch_size) + 1
@@ -111,10 +104,11 @@ def upload_bulk(
             result = response.json()
             
             total_successful += result.get('successful', 0)
+            total_skipped += result.get('skipped', 0)
             total_failed += result.get('failed', 0)
             all_results.append(result)
             
-            print(f"✅ {result.get('successful', 0)} successful, {result.get('failed', 0)} failed")
+            print(f"✅ {result.get('successful', 0)} successful, {result.get('skipped', 0)} skipped, {result.get('failed', 0)} failed")
             
             # Print failed uploads
             if result.get('results', {}).get('failed'):
@@ -143,6 +137,7 @@ def upload_bulk(
     
     return {
         'total_successful': total_successful,
+        'total_skipped': total_skipped,
         'total_failed': total_failed,
         'batches': all_results
     }
@@ -262,6 +257,7 @@ def main():
     print("=" * 60)
     print(f"Total images processed: {len(images)}")
     print(f"✅ Successful uploads: {result['total_successful']}")
+    print(f"⏭️  Skipped (already uploaded): {result['total_skipped']}")
     print(f"❌ Failed uploads: {result['total_failed']}")
     
     if failed_to_prepare:

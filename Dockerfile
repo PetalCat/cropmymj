@@ -50,6 +50,9 @@ RUN pnpm prisma generate
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/.svelte-kit ./.svelte-kit
 
+# Copy static files (for example images and other static assets)
+COPY static ./static
+
 # Create directories for data and images
 RUN mkdir -p /app/data/images
 

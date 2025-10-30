@@ -55,6 +55,7 @@ export const POST: RequestHandler = async (event) => {
 
 		const results = {
 			successful: [] as string[],
+			skipped: [] as string[],
 			failed: [] as { filename: string; error: string }[]
 		};
 
@@ -89,6 +90,21 @@ export const POST: RequestHandler = async (event) => {
 						continue;
 					}
 
+					// Check if image already exists in database
+					const existingImage = await prisma.image.findUnique({
+						where: { filename }
+					});
+
+					// Check if file already exists on disk
+					const filePath = join(IMAGES_PATH, filename);
+					const fileExists = existsSync(filePath);
+
+					// Skip if both database record and file exist
+					if (existingImage && fileExists) {
+						results.skipped.push(filename);
+						continue;
+					}
+
 					// Validate orientations if provided
 					if (orientations && orientations.length > 0) {
 						const invalidOrientations = orientations.filter(
@@ -102,7 +118,6 @@ export const POST: RequestHandler = async (event) => {
 
 					// Convert base64 to buffer and save
 					const imageBuffer = Buffer.from(imageData, 'base64');
-					const filePath = join(IMAGES_PATH, filename);
 					await writeFile(filePath, imageBuffer);
 
 					// Upsert image in database
@@ -162,7 +177,7 @@ export const POST: RequestHandler = async (event) => {
 
 			// Log progress after each chunk
 			console.log(
-				`Chunk ${chunkIndex + 1} complete: ${results.successful.length} successful, ${results.failed.length} failed`
+				`Chunk ${chunkIndex + 1} complete: ${results.successful.length} successful, ${results.skipped.length} skipped, ${results.failed.length} failed`
 			);
 		}
 
@@ -173,6 +188,7 @@ export const POST: RequestHandler = async (event) => {
 				success: results.failed.length === 0,
 				total: images.length,
 				successful: results.successful.length,
+				skipped: results.skipped.length,
 				failed: results.failed.length,
 				results
 			},
