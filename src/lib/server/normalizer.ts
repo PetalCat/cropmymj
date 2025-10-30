@@ -3,7 +3,8 @@ import { readdir, copyFile, stat, access } from 'fs/promises';
 import { join } from 'path';
 import { spawn } from 'child_process';
 
-const UNFILTERED_DIR = process.env.UNFILTERED_DIR || join(process.cwd(), '..', 'set-unfiltered-uncropped');
+const UNFILTERED_DIR =
+	process.env.UNFILTERED_DIR || join(process.cwd(), '..', 'set-unfiltered-uncropped');
 const NORMAL_DIR = process.env.NORMAL_DIR || join(process.cwd(), '..', 'normal-set');
 const PYTHON_SCRIPT = process.env.PYTHON_SCRIPT || join(process.cwd(), '..', 'normalize_image.py');
 const PYTHON_VENV = process.env.PYTHON_VENV || join(process.cwd(), '..', '.venv', 'bin', 'python');
