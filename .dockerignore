@@ -14,3 +14,19 @@ coverage
 *~
 .pnpm-store
 dist
+
+# Exclude data directory (database and images)
+data/
+data/**
+
+# Exclude static images
+static/images/
+static/images/**
+
+# Exclude exports
+exports/
+exports/**
+
+# Exclude build directory
+build/
+build/**
