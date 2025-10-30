@@ -39,3 +39,5 @@ logs/
 .vscode/
 .idea/
 *.sublime-*
+
+/../generated/prisma

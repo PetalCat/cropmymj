@@ -1,26 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { validateApiToken } from '$lib/server/auth';
-import db from '$lib/server/db';
-
-interface ImageRow {
-	id: number;
-	filename: string;
-	width: number;
-	height: number;
-	created_at: string;
-}
-
-interface CropRow {
-	x: number;
-	y: number;
-	width: number;
-	height: number;
-}
-
-interface OrientationRow {
-	orientation: string;
-}
+import prisma from '$lib/server/db';
 
 /**
  * POST /api/v1/images/bulk
@@ -38,31 +19,31 @@ export const POST: RequestHandler = async (event) => {
 			return json({ error: 'filenames array required' }, { status: 400 });
 		}
 
-		const placeholders = filenames.map(() => '?').join(',');
-		const query = `SELECT id, filename, width, height, created_at FROM images WHERE filename IN (${placeholders})`;
-
-		const getImages = db.prepare(query);
-		const images = getImages.all(...filenames) as ImageRow[];
+		const images = await prisma.image.findMany({
+			where: {
+				filename: {
+					in: filenames
+				}
+			},
+			include: {
+				crops: true,
+				orientations: true
+			}
+		});
 
 		const imagesWithData = images.map((image) => {
-			const getCrops = db.prepare('SELECT x, y, width, height FROM crops WHERE image_id = ?');
-			const crops = getCrops.all(image.id) as CropRow[];
-
-			const getOrientations = db.prepare('SELECT orientation FROM orientations WHERE image_id = ?');
-			const orientations = getOrientations.all(image.id) as OrientationRow[];
-
 			// Calculate consensus
 			let consensusCrop = null;
-			if (crops.length > 0) {
+			if (image.crops.length > 0) {
 				consensusCrop = {
-					x: Math.round(crops.reduce((sum, c) => sum + c.x, 0) / crops.length),
-					y: Math.round(crops.reduce((sum, c) => sum + c.y, 0) / crops.length),
-					width: Math.round(crops.reduce((sum, c) => sum + c.width, 0) / crops.length),
-					height: Math.round(crops.reduce((sum, c) => sum + c.height, 0) / crops.length)
+					x: Math.round(image.crops.reduce((sum, c) => sum + c.x, 0) / image.crops.length),
+					y: Math.round(image.crops.reduce((sum, c) => sum + c.y, 0) / image.crops.length),
+					width: Math.round(image.crops.reduce((sum, c) => sum + c.width, 0) / image.crops.length),
+					height: Math.round(image.crops.reduce((sum, c) => sum + c.height, 0) / image.crops.length)
 				};
 			}
 
-			const orientationCounts = orientations.reduce(
+			const orientationCounts = image.orientations.reduce(
 				(acc, o) => {
 					acc[o.orientation] = (acc[o.orientation] || 0) + 1;
 					return acc;
@@ -74,10 +55,14 @@ export const POST: RequestHandler = async (event) => {
 				Object.entries(orientationCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
 
 			return {
-				...image,
+				id: image.id,
+				filename: image.filename,
+				width: image.width,
+				height: image.height,
+				created_at: image.created_at,
 				consensusCrop,
 				consensusOrientation,
-				submissionCount: crops.length
+				submissionCount: image.crops.length
 			};
 		});
 
