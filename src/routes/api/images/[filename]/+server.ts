@@ -21,7 +21,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
 		// Determine content type
 		const ext = filename.split('.').pop()?.toLowerCase();
-		
+
 		// If original is requested or it's a PNG (preserve transparency), serve as-is
 		if (original || ext === 'png') {
 			const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';

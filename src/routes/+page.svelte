@@ -153,13 +153,13 @@
 			canvas.width = img.width;
 			canvas.height = img.height;
 			console.log('Canvas sized to:', canvas.width, 'x', canvas.height);
-			
+
 			// Set original dimensions if not already set
 			if (originalWidth === 0 || originalHeight === 0) {
 				originalWidth = img.width;
 				originalHeight = img.height;
 			}
-			
+
 			ctx = canvas.getContext('2d');
 			drawCanvas();
 
@@ -183,13 +183,13 @@
 				canvas.width = img.width;
 				canvas.height = img.height;
 				console.log('Canvas sized to:', canvas.width, 'x', canvas.height);
-				
+
 				// Set original dimensions if not already set
 				if (originalWidth === 0 || originalHeight === 0) {
 					originalWidth = img.width;
 					originalHeight = img.height;
 				}
-				
+
 				ctx = canvas.getContext('2d');
 				drawCanvas();
 
