@@ -41,8 +41,8 @@ RUN npm install -g pnpm
 # Copy package files
 COPY package*.json pnpm-lock.yaml ./
 
-# Install production dependencies using pnpm
-RUN pnpm install --prod --frozen-lockfile
+# Install ALL dependencies (including dev dependencies needed for native module building)
+RUN pnpm install --frozen-lockfile
 
 # Rebuild better-sqlite3 for the production container architecture
 RUN pnpm rebuild better-sqlite3
