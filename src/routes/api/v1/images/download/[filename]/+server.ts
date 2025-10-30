@@ -1,9 +1,11 @@
 import type { RequestHandler } from './$types';
 import { error } from '@sveltejs/kit';
 import { validateApiToken } from '$lib/server/auth';
-import { IMAGES_PATH } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+
+const IMAGES_PATH = env.IMAGES_PATH || './static/images';
 
 /**
  * GET /api/v1/images/download/[filename]
