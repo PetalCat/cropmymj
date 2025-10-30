@@ -78,9 +78,9 @@ def upload_bulk(
     api_url: str,
     api_token: str,
     images: List[Dict],
-    batch_size: int = 20
+    batch_size: int = 10
 ) -> Dict:
-    """Upload images in batches."""
+    """Upload images in batches with automatic retry on payload too large."""
     headers = {
         'Authorization': f'Bearer {api_token}',
         'Content-Type': 'application/json'
@@ -89,14 +89,16 @@ def upload_bulk(
     total_successful = 0
     total_failed = 0
     all_results = []
+    current_batch_size = batch_size
     
     print(f"\n🚀 Uploading {len(images)} images in batches of {batch_size}...")
     print(f"📦 Server processes in chunks of 50 for memory efficiency.\n")
     
     # Process in batches
-    for i in range(0, len(images), batch_size):
-        batch = images[i:i + batch_size]
-        batch_num = i // batch_size + 1
+    i = 0
+    while i < len(images):
+        batch = images[i:i + current_batch_size]
+        batch_num = (i // batch_size) + 1
         total_batches = (len(images) + batch_size - 1) // batch_size
         
         print(f"📤 Uploading batch {batch_num}/{total_batches} ({len(batch)} images)...", end=' ', flush=True)
@@ -118,10 +120,26 @@ def upload_bulk(
             if result.get('results', {}).get('failed'):
                 for fail in result['results']['failed']:
                     print(f"    ❌ {fail['filename']}: {fail['error']}")
+            
+            # Move to next batch
+            i += current_batch_size
+            
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 413 and current_batch_size > 1:
+                # Payload too large - retry with smaller batch
+                new_batch_size = max(1, current_batch_size // 2)
+                print(f"⚠️  Payload too large, retrying with batch size {new_batch_size}")
+                current_batch_size = new_batch_size
+                # Don't increment i - retry same batch with smaller size
+            else:
+                print(f"❌ Failed: {e}")
+                total_failed += len(batch)
+                i += current_batch_size
                     
         except requests.exceptions.RequestException as e:
             print(f"❌ Failed: {e}")
             total_failed += len(batch)
+            i += current_batch_size
     
     return {
         'total_successful': total_successful,
@@ -152,8 +170,8 @@ def main():
     parser.add_argument(
         '--batch-size',
         type=int,
-        default=20,
-        help='Number of images per batch (default: 20, no upper limit)'
+        default=10,
+        help='Number of images per batch (default: 10). Use smaller batches for remote servers to avoid 413 errors.'
     )
     parser.add_argument(
         '--extensions',
