@@ -6,10 +6,16 @@ Upload unlimited images to the API in batches.
 Supports reading images from a directory and uploading with optional metadata.
 
 Examples:
-    # Upload to localhost
+    # Upload to localhost (default port 5174)
     python3 bulk_upload.py /path/to/images --token YOUR_TOKEN
     
-    # Upload to remote server
+    # Upload to remote server (auto-appends /api/v1/images/upload-bulk)
+    python3 bulk_upload.py /path/to/images --url https://example.com --token YOUR_TOKEN
+    
+    # Upload to localhost on different port
+    python3 bulk_upload.py /path/to/images --url http://localhost:3000 --token YOUR_TOKEN
+    
+    # Full API endpoint (no auto-append)
     python3 bulk_upload.py /path/to/images --url https://example.com/api/v1/images/upload-bulk --token YOUR_TOKEN
     
     # Dry run to see what would be uploaded
@@ -135,8 +141,8 @@ def main():
         '--url',
         '--api-url',
         dest='api_url',
-        default='http://localhost:5174/api/v1/images/upload-bulk',
-        help='API endpoint URL (default: http://localhost:5174/api/v1/images/upload-bulk)'
+        default='http://localhost:5174',
+        help='Base URL or full API endpoint (default: http://localhost:5174). Auto-appends /api/v1/images/upload-bulk if not present.'
     )
     parser.add_argument(
         '--token',
@@ -166,6 +172,16 @@ def main():
     )
     
     args = parser.parse_args()
+    
+    # Auto-construct API URL if just base URL provided
+    api_url = args.api_url
+    if not api_url.endswith('/upload-bulk'):
+        # Remove trailing slash if present
+        api_url = api_url.rstrip('/')
+        # Append the API endpoint
+        api_url = f"{api_url}/api/v1/images/upload-bulk"
+    
+    print(f"🌐 API Endpoint: {api_url}")
     
     # Validate directory
     directory = Path(args.directory)
@@ -220,7 +236,7 @@ def main():
     
     # Upload
     print("─" * 60)
-    result = upload_bulk(args.api_url, args.token, images, args.batch_size)
+    result = upload_bulk(api_url, args.token, images, args.batch_size)
     
     # Summary
     print("\n" + "=" * 60)
