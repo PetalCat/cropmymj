@@ -22,4 +22,6 @@ services:
     volumes:
       # Persist database and images
       - ./data:/app/data
+      # Mount static/images for example images (not in git)
+      - ./static/images:/app/static/images
     restart: unless-stopped
