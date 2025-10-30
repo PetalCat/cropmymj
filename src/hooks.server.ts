@@ -1,6 +1,6 @@
 import type { Handle } from '@sveltejs/kit';
 import { startNormalizer } from '$lib/server/normalizer';
-import { SITE_PASSWORD, DB_PATH, API_TOKENS, IMAGES_DIR } from '$env/static/private';
+import { SITE_PASSWORD, DB_PATH, API_TOKENS, IMAGES_PATH } from '$env/static/private';
 import crypto from 'crypto';
 
 // Start the image normalizer service when server starts
@@ -32,23 +32,32 @@ function isAuthenticated(event: any): boolean {
 	return sessionPassword === hashPassword(SITE_PASSWORD);
 }
 
-// Paths that don't require authentication
-const PUBLIC_PATHS = ['/login', '/api/login', '/api/logout', '/api/v1/', '/api/debug-env'];
+// Paths that are always public (no auth required)
+const ALWAYS_PUBLIC_PATHS = ['/login', '/api/login', '/api/logout'];
+
+// Paths that require API token (v1 API endpoints)
+const API_TOKEN_PATHS = ['/api/v1/'];
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const path = event.url.pathname;
 
-	// Allow public paths (v1 API endpoints handle their own authentication)
-	if (PUBLIC_PATHS.some((p) => path.startsWith(p))) {
+	// Always allow these paths
+	if (ALWAYS_PUBLIC_PATHS.some((p) => path === p || path.startsWith(p))) {
 		return resolve(event);
 	}
 
-	// Check authentication for protected paths
+	// API token authentication for v1 endpoints
+	if (API_TOKEN_PATHS.some((p) => path.startsWith(p))) {
+		// These are handled by validateApiToken in each endpoint
+		return resolve(event);
+	}
+
+	// Login-based authentication for main app and user-facing API endpoints
 	if (PASSWORD_ENABLED && !isAuthenticated(event)) {
 		// Redirect to login page
 		if (path.startsWith('/api/')) {
 			// For API requests, return 401
-			return new Response(JSON.stringify({ error: 'Authentication required' }), {
+			return new Response(JSON.stringify({ error: 'Authentication required. Please log in.' }), {
 				status: 401,
 				headers: { 'Content-Type': 'application/json' }
 			});
