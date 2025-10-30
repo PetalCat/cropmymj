@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Image {
+  id          Int           @id @default(autoincrement())
+  filename    String        @unique
+  width       Int
+  height      Int
+  created_at  DateTime      @default(now())
+  crops       Crop[]
+  orientations Orientation[]
+  unfits      Unfit[]
+
+  @@map("images")
+}
+
+model Crop {
+  id        Int      @id @default(autoincrement())
+  image_id  Int      
+  user_id   String   
+  x         Int
+  y         Int
+  width     Int
+  height    Int
+  created_at DateTime @default(now())
+  image     Image    @relation(fields: [image_id], references: [id])
+
+  @@index([image_id])
+  @@map("crops")
+}
+
+model Orientation {
+  id          Int      @id @default(autoincrement())
+  image_id    Int      
+  user_id     String   
+  orientation String
+  created_at  DateTime @default(now())
+  image       Image    @relation(fields: [image_id], references: [id])
+
+  @@index([image_id])
+  @@map("orientations")
+}
+
+model Unfit {
+  id        Int      @id @default(autoincrement())
+  image_id  Int      
+  user_id   String   
+  created_at DateTime @default(now())
+  image     Image    @relation(fields: [image_id], references: [id])
+
+  @@index([image_id])
+  @@map("unfits")
+}

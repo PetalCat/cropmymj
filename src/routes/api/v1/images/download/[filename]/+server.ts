@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { error } from '@sveltejs/kit';
 import { validateApiToken } from '$lib/server/auth';
-import { IMAGES_DIR } from '$env/static/private';
+import { IMAGES_PATH } from '$env/static/private';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 
@@ -25,7 +25,7 @@ export const GET: RequestHandler = async (event) => {
 	}
 
 	try {
-		const filePath = join(IMAGES_DIR, filename);
+		const filePath = join(IMAGES_PATH, filename);
 		const fileBuffer = await readFile(filePath);
 
 		// Determine content type

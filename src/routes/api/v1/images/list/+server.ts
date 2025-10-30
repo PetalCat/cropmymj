@@ -1,32 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { validateApiToken } from '$lib/server/auth';
-import db from '$lib/server/db';
-
-interface ImageRow {
-	id: number;
-	filename: string;
-	width: number;
-	height: number;
-	created_at: string;
-}
-
-interface CropRow {
-	x: number;
-	y: number;
-	width: number;
-	height: number;
-	user_id: string;
-}
-
-interface OrientationRow {
-	orientation: string;
-	user_id: string;
-}
-
-interface UnfitRow {
-	user_id: string;
-}
+import prisma from '$lib/server/db';
 
 /**
  * GET /api/v1/images/list
@@ -46,35 +21,26 @@ export const GET: RequestHandler = async (event) => {
 	const includeData = url.searchParams.get('include_data') === 'true';
 
 	try {
-		let query = 'SELECT id, filename, width, height, created_at FROM images';
-		const params: any[] = [];
-
-		if (limit > 0) {
-			query += ' LIMIT ? OFFSET ?';
-			params.push(limit, offset);
-		}
-
-		const getImages = db.prepare(query);
-		const images = getImages.all(...params) as ImageRow[];
-
 		if (!includeData) {
+			const images = await prisma.image.findMany({
+				...(limit > 0 && { take: limit, skip: offset })
+			});
 			return json({ images, total: images.length });
 		}
 
 		// Include crop and orientation data
+		const images = await prisma.image.findMany({
+			...(limit > 0 && { take: limit, skip: offset }),
+			include: {
+				crops: { select: { x: true, y: true, width: true, height: true, user_id: true } },
+				orientations: { select: { orientation: true, user_id: true } },
+				unfits: { select: { user_id: true } }
+			}
+		});
+
+		// Calculate consensus for each image
 		const imagesWithData = images.map((image) => {
-			const getCrops = db.prepare(
-				'SELECT x, y, width, height, user_id FROM crops WHERE image_id = ?'
-			);
-			const crops = getCrops.all(image.id) as CropRow[];
-
-			const getOrientations = db.prepare(
-				'SELECT orientation, user_id FROM orientations WHERE image_id = ?'
-			);
-			const orientations = getOrientations.all(image.id) as OrientationRow[];
-
-			const getUnfits = db.prepare('SELECT user_id FROM unfits WHERE image_id = ?');
-			const unfits = getUnfits.all(image.id) as UnfitRow[];
+			const { crops, orientations, unfits, ...imageData } = image;
 
 			// Calculate consensus crop
 			let consensusCrop = null;
@@ -88,19 +54,16 @@ export const GET: RequestHandler = async (event) => {
 			}
 
 			// Calculate consensus orientation
-			const orientationCounts = orientations.reduce(
-				(acc, o) => {
-					acc[o.orientation] = (acc[o.orientation] || 0) + 1;
-					return acc;
-				},
-				{} as Record<string, number>
-			);
+			const orientationCounts: Record<string, number> = {};
+			orientations.forEach((o) => {
+				orientationCounts[o.orientation] = (orientationCounts[o.orientation] || 0) + 1;
+			});
 
 			const consensusOrientation =
 				Object.entries(orientationCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
 
 			return {
-				...image,
+				...imageData,
 				crops,
 				orientations,
 				unfits,
