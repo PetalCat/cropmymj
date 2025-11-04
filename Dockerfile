@@ -24,6 +24,9 @@ RUN pnpm prisma generate
 # Copy source code
 COPY . .
 
+# Set a dummy DATABASE_URL for build time (required by Prisma Client)
+ENV DATABASE_URL="file:./data/crops.db"
+
 # Build the application
 RUN pnpm run build
 
