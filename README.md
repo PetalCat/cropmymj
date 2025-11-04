@@ -11,9 +11,10 @@ A SvelteKit-based web application for crowd-sourced image cropping and orientati
 - 📊 Calculate consensus crops (average coordinates)
 - 🎯 Determine most common orientation
 - 🔐 Dual authentication: session-based UI + Bearer token API
-- � **Bulk upload API** - Upload hundreds of images at once
-- �🐍 Python API client for fetching consensus data
+- 📤 **Bulk upload API** - Upload hundreds of images at once
+- 🐍 Python API client for fetching consensus data
 - 🚀 RESTful API for programmatic image uploads and downloads
+- 👨‍💼 **Admin dashboard** - Manage submissions, view averages, detect outliers
 
 ## Tech Stack
 
@@ -24,6 +25,28 @@ A SvelteKit-based web application for crowd-sourced image cropping and orientati
 - **Build**: Vite 7.1.12
 
 ## Quick Start
+
+### Using Docker (Recommended for Production)
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/PetalCat/cropmymj.git
+cd cropmymj
+
+# 2. Configure environment (optional)
+cp .env.example .env
+# Edit .env with your SITE_PASSWORD, API_TOKENS, etc.
+
+# 3. Start with docker-compose
+docker-compose up -d
+
+# Database automatically initializes and persists in named volume
+# Visit http://localhost:8547
+```
+
+See [DOCKER.md](./DOCKER.md) and [DATABASE_PERSISTENCE.md](./DATABASE_PERSISTENCE.md) for details.
+
+### Local Development
 
 1. Install dependencies:
 
@@ -102,6 +125,24 @@ See [PRISMA.md](./PRISMA.md) for Prisma migration details.
 - **Location**: `./data/crops.db` (SQLite)
 - **Schema**: 4 models (Image, Crop, Orientation, Unfit)
 - **Migrations**: Currently using `db push` for development
+
+## Admin Dashboard
+
+Manage and analyze submissions with the admin dashboard. See [ADMIN.md](./ADMIN.md) for complete documentation.
+
+**Quick access:**
+
+1. Set `API_TOKENS` in `.env`
+2. Navigate to `/admin`
+3. Enter your API token
+
+**Features:**
+
+- View submission statistics and averages
+- Detect outlier submissions (configurable threshold)
+- Delete suspicious submissions
+- Track orientation consensus
+- Identify problematic images
 
 ## Using Consensus Data in Python
 

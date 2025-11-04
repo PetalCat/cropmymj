@@ -26,6 +26,10 @@ vite.config.ts.timestamp-*
 data/*.db
 data/*.db-shm
 data/*.db-wal
+prisma/*.db
+prisma/*.db-shm
+prisma/*.db-wal
+prisma/data/
 
 # Images - keep directory structure but ignore actual images
 static/images/*
