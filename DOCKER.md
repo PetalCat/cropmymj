@@ -2,7 +2,9 @@
 
 ## Quick Start with Docker
 
-### Option 1: Using docker-compose (Recommended)
+### Using docker-compose (Recommended)
+
+**This setup uses a named volume for automatic database persistence.**
 
 1. **Clone the repository**:
 
@@ -11,25 +13,81 @@
    cd cropmymj
    ```
 
-2. **Start the application**:
+2. **Configure environment** (optional):
+
+   ```bash
+   cp .env.example .env
+   # Edit .env with your settings (SITE_PASSWORD, API_TOKENS, etc.)
+   ```
+
+3. **Start the application**:
 
    ```bash
    docker-compose up -d
    ```
 
-3. **Access the app**:
+   This will:
+   - Build the Docker image
+   - Create a named volume (`cropmymj-data`) for persistent storage
+   - Initialize the database automatically with `prisma db push`
+   - Start the application
+
+4. **Access the app**:
    Open your browser to `http://localhost:8547`
 
-4. **View logs**:
+5. **View logs**:
 
    ```bash
    docker-compose logs -f
    ```
 
-5. **Stop the application**:
+6. **Stop the application**:
    ```bash
-   docker-compose down
+   docker-compose down  # Data persists in the named volume
    ```
+
+### Deploying Updates (Rebuild)
+
+```bash
+# Stop containers
+docker-compose down
+
+# Rebuild image with latest code
+docker-compose build
+
+# Start with new image (database persists automatically!)
+docker-compose up -d
+```
+
+**Important:** Do NOT use `docker-compose down -v` as this will delete your data volume!
+
+## Data Persistence
+
+Your database and uploaded images are stored in a Docker named volume (`cropmymj-data`). This volume:
+
+- Persists across container restarts and rebuilds
+- Survives `docker-compose down`
+- Only gets deleted if you explicitly use `-v` flag or run `docker volume rm cropmymj-data`
+
+To inspect the volume:
+
+```bash
+docker volume inspect cropmymj-data
+```
+
+To backup the volume:
+
+```bash
+docker run --rm -v cropmymj-data:/data -v $(pwd):/backup alpine tar czf /backup/backup.tar.gz /data
+```
+
+To restore from backup:
+
+```bash
+docker run --rm -v cropmymj-data:/data -v $(pwd):/backup alpine tar xzf /backup/backup.tar.gz -C /
+```
+
+## Advanced: Docker Run Commands
 
 ### Option 2: Using Docker commands
 
@@ -128,6 +186,7 @@ Use volume mounts to persist your database and images:
 ```
 
 This mounts your local `data/` directory to the container, which includes:
+
 - `data/crops.db` - SQLite database
 - `data/images/` - Uploaded images
 

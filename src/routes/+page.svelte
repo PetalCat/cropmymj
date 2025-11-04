@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 
-	let images: string[] = [];
-	let currentImageIndex = 0;
-	let canvas: HTMLCanvasElement;
+	let images: string[] = $state([]);
+	let currentImageIndex = $state(0);
+	let canvas: HTMLCanvasElement = $state()!;
 	let ctx: CanvasRenderingContext2D | null;
 	let img: HTMLImageElement;
 	let originalWidth = 0; // Store original image dimensions
@@ -12,21 +12,22 @@
 	let startX = 0;
 	let startY = 0;
 	let currentRect = { x: 0, y: 0, width: 0, height: 0 };
-	let selectedOrientation: 'side' | 'front' | null = null;
+	let selectedOrientation: 'side' | 'front' | null = $state(null);
 	let userId = '';
-	let loading = false;
-	let message = '';
-	let guidelinesExpanded = true;
-	let userSubmissionCount = 0;
-	let totalImages = 0;
+	let loading = $state(false);
+	let message = $state('');
+	let guidelinesExpanded = $state(true);
+	let userSubmissionCount = $state(0);
+	let totalImages = $state(0);
 
 	// Image preloading cache
 	const imageCache = new Map<string, HTMLImageElement>();
 	const PRELOAD_COUNT = 3; // Number of images to preload ahead
 
-	$: currentImage = images[currentImageIndex];
-	$: progressPercentage =
-		totalImages > 0 ? Math.round((userSubmissionCount / totalImages) * 100) : 0;
+	let currentImage = $derived(images[currentImageIndex]);
+	let progressPercentage = $derived(
+		totalImages > 0 ? Math.round((userSubmissionCount / totalImages) * 100) : 0
+	);
 
 	async function fetchUserProgress() {
 		try {
@@ -398,7 +399,7 @@
 			</div>
 		</div>
 
-		<button on:click={handleLogout} class="logout-btn-compact" title="Logout"> 🚪 </button>
+		<button onclick={handleLogout} class="logout-btn-compact" title="Logout"> 🚪 </button>
 	</div>
 
 	{#if images.length === 0}
@@ -416,8 +417,8 @@
 				<div class="canvas-container">
 					<canvas
 						bind:this={canvas}
-						on:mousedown={handleMouseDown}
-						on:dragstart={(e) => e.preventDefault()}
+						onmousedown={handleMouseDown}
+						ondragstart={(e) => e.preventDefault()}
 					></canvas>
 				</div>
 			</div>
@@ -426,7 +427,7 @@
 				<div class="guidelines">
 					<button
 						class="guidelines-header"
-						on:click={() => (guidelinesExpanded = !guidelinesExpanded)}
+						onclick={() => (guidelinesExpanded = !guidelinesExpanded)}
 					>
 						<div class="header-content">
 							<span class="check-icon" class:checked={!guidelinesExpanded}>
@@ -463,7 +464,7 @@
 											<img
 												src="/images/good.png"
 												alt="Good crop example"
-												on:error={(e) =>
+												onerror={(e) =>
 													((e.currentTarget as HTMLImageElement).style.display = 'none')}
 											/>
 										</div>
@@ -474,7 +475,7 @@
 											<img
 												src="/images/needmoreshoulder.png"
 												alt="Need more shoulder example"
-												on:error={(e) =>
+												onerror={(e) =>
 													((e.currentTarget as HTMLImageElement).style.display = 'none')}
 											/>
 										</div>
@@ -485,7 +486,7 @@
 											<img
 												src="/images/toomanypeople.png"
 												alt="Too many people example"
-												on:error={(e) =>
+												onerror={(e) =>
 													((e.currentTarget as HTMLImageElement).style.display = 'none')}
 											/>
 										</div>
@@ -493,10 +494,11 @@
 									</div>
 									<div class="example-item">
 										<div class="example-placeholder unfit">
+											<!-- svelte-ignore a11y_img_redundant_alt -->
 											<img
 												src="/images/unfit.png"
 												alt="Unfit image example"
-												on:error={(e) =>
+												onerror={(e) =>
 													((e.currentTarget as HTMLImageElement).style.display = 'none')}
 											/>
 										</div>
@@ -514,7 +516,7 @@
 						<button
 							class="orientation-btn"
 							class:selected={selectedOrientation === 'side'}
-							on:click={() => (selectedOrientation = 'side')}
+							onclick={() => (selectedOrientation = 'side')}
 						>
 							<span class="icon">👈</span>
 							<span>Side View</span>
@@ -522,10 +524,10 @@
 						<button
 							class="orientation-btn"
 							class:selected={selectedOrientation === 'front'}
-							on:click={() => (selectedOrientation = 'front')}
+							onclick={() => (selectedOrientation = 'front')}
 						>
 							<span class="icon">👤</span>
-							<span>Front View</span>
+							<span>Front/Back View</span>
 						</button>
 					</div>
 				</div>
@@ -536,11 +538,11 @@
 						<p><strong>🚫 Unfit</strong> if Matthew's shoulders/head are not clearly visible</p>
 					</div>
 					<div class="action-buttons">
-						<button class="btn btn-skip" on:click={handleSkip} disabled={loading}> ⏭ Skip </button>
-						<button class="btn btn-unfit" on:click={handleSkipUnfit} disabled={loading}>
+						<button class="btn btn-skip" onclick={handleSkip} disabled={loading}> ⏭ Skip </button>
+						<button class="btn btn-unfit" onclick={handleSkipUnfit} disabled={loading}>
 							🚫 Unfit
 						</button>
-						<button class="btn btn-submit" on:click={handleSubmit} disabled={loading}>
+						<button class="btn btn-submit" onclick={handleSubmit} disabled={loading}>
 							{#if loading}
 								<span class="spinner-small"></span>
 							{:else}
@@ -577,12 +579,6 @@
 		height: 100vh;
 		display: flex;
 		flex-direction: column;
-	}
-
-	header {
-		text-align: center;
-		margin-bottom: 0.5rem;
-		color: white;
 	}
 
 	.top-bar {
@@ -694,25 +690,6 @@
 		100% {
 			transform: translateX(100%);
 		}
-	}
-
-	/* Old styles - can be removed */
-	.user-progress-container {
-		display: none;
-	}
-
-	.user-progress-text {
-		display: none;
-	}
-
-	.user-progress-bar {
-		display: none;
-	}
-
-	.subtitle {
-		font-size: 1rem;
-		opacity: 0.9;
-		margin-top: 0.25rem;
 	}
 
 	.loading {
@@ -1095,34 +1072,6 @@
 		gap: 0.35rem;
 		white-space: nowrap;
 		flex: 1;
-	}
-
-	.btn-primary {
-		background: white;
-		color: #667eea;
-		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-	}
-
-	.btn-primary:hover:not(:disabled) {
-		transform: translateY(-2px);
-		box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-	}
-
-	.btn-primary:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
-	}
-
-	.btn-secondary {
-		background: rgba(255, 255, 255, 0.2);
-		color: white;
-		border: 2px solid white;
-		backdrop-filter: blur(10px);
-	}
-
-	.btn-secondary:hover {
-		background: rgba(255, 255, 255, 0.3);
-		transform: translateY(-2px);
 	}
 
 	.btn-skip {

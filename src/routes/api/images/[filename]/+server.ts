@@ -34,13 +34,13 @@ export const GET: RequestHandler = async ({ params, url }) => {
 		}
 
 		// Compress JPEG images for faster loading
-		const compressed = await sharp(file)
+		const compressed = (await sharp(file)
 			.resize(MAX_DIMENSION, MAX_DIMENSION, {
 				fit: 'inside',
 				withoutEnlargement: true
 			})
 			.jpeg({ quality: COMPRESSION_QUALITY, mozjpeg: true })
-			.toBuffer();
+			.toBuffer()) as Buffer<ArrayBuffer>;
 
 		return new Response(compressed, {
 			headers: {

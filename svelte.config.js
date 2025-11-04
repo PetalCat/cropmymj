@@ -12,7 +12,18 @@ const config = {
 		// for more information about preprocessors
 		adapter: adapter({
 			out: 'build'
-		})
+		}),
+
+		experimental: {
+			remoteFunctions: true
+		}
+	},
+
+	compilerOptions: {
+		experimental: {
+			async: true
+		},
+		runes: true
 	}
 };
 

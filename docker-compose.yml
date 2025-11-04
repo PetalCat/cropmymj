@@ -2,29 +2,50 @@ version: '3.8'
 
 services:
   cropmymj:
-    build: .
-    image: cropmymj
-    container_name: cropmymj-container
-    ports:
-      - '${PORT:-8547}:${PORT:-8547}'
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cropmymj-app
+    restart: unless-stopped
     env_file:
       - .env
+    ports:
+      - '${PORT:-8547}:${PORT:-8547}'
     environment:
-      # These override any values from env_file if needed
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/crops.db
       - PORT=${PORT:-8547}
       - HOST=${HOST:-0.0.0.0}
       - SITE_PASSWORD=${SITE_PASSWORD}
       - API_TOKENS=${API_TOKENS}
-      - DATABASE_URL=${DATABASE_URL:-file:./data/crops.db}
-      - DB_PATH=${DB_PATH:-./data/crops.db}
-      - IMAGES_PATH=${IMAGES_PATH:-./data/images}
+      - IMAGES_PATH=/app/data/images
       - BODY_SIZE_LIMIT=${BODY_SIZE_LIMIT:-104857600}
     volumes:
-      # Persist database and images
-      - ./data:/app/data
+      # Persist SQLite database and images
+      - cropmymj-data:/app/data
       # Mount example images individually (not in git, but needed at runtime)
       - ./static/images/good.png:/app/build/client/images/good.png
       - ./static/images/needmoreshoulder.png:/app/build/client/images/needmoreshoulder.png
       - ./static/images/toomanypeople.png:/app/build/client/images/toomanypeople.png
       - ./static/images/unfit.png:/app/build/client/images/unfit.png
-    restart: unless-stopped
+    command: >
+      sh -c "pnpm prisma db push --skip-generate &&
+             node build"
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:${PORT:-8547}/api/images'
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  cropmymj-data:
+    driver: local

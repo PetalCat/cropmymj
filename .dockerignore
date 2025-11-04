@@ -1,37 +1,12 @@
 node_modules
-.svelte-kit
-build
 .env
-.env.*
-!.env.example
-*.log
-.DS_Store
-coverage
-.vscode
-.idea
-*.swp
-*.swo
-*~
-.pnpm-store
+.git
+.gitignore
 dist
-
-# Exclude data directory at root (database and images)
-# Use leading slash to match only at root, not prisma/data/
-/data/
-/data/**
-
-# Exclude static images EXCEPT the example images
-static/images/*
-!static/images/good.png
-!static/images/needmoreshoulder.png
-!static/images/toomanypeople.png
-!static/images/unfit.png
-!static/images/README.md
-
-# Exclude exports
-exports/
-exports/**
-
-# Exclude build directory
-/build/
-/build/**
+build
+.svelte-kit
+data
+backups
+*.log
+*.md
+.DS_Store

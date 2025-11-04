@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	
-	let password = '';
-	let error = '';
-	let loading = false;
+	let password = $state('');
+	let error = $state('');
+	let loading = $state(false);
 	
 	async function handleLogin(e: Event) {
 		e.preventDefault();
@@ -45,7 +45,7 @@
 				<p class="text-gray-600">Enter password to continue</p>
 			</div>
 			
-			<form on:submit={handleLogin} class="space-y-6">
+			<form onsubmit={handleLogin} class="space-y-6">
 				<div>
 					<label for="password" class="block text-sm font-medium text-gray-700 mb-2">
 						Password
