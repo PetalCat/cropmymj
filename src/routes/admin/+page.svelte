@@ -385,7 +385,7 @@
 									<h3>Visual Analysis</h3>
 									<div class="image-canvas-container">
 										<img
-											src="/images/{image.filename}"
+											src="/api/images/{image.filename}"
 											alt={image.filename}
 											class="preview-image"
 										/>
