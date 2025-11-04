@@ -3,12 +3,36 @@ import { join } from 'path';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import sharp from 'sharp';
+import crypto from 'crypto';
 
 const IMAGES_PATH = env.IMAGES_PATH || './data/images';
 const COMPRESSION_QUALITY = 70; // 70% quality for faster loading
 const MAX_DIMENSION = 2048; // Max width/height to reduce size
+const SITE_PASSWORD = env.SITE_PASSWORD || '';
+const PASSWORD_ENABLED = SITE_PASSWORD && SITE_PASSWORD.length > 0;
 
-export const GET: RequestHandler = async ({ params, url }) => {
+function hashPassword(password: string): string {
+	return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+function isAuthenticated(cookies: any): boolean {
+	if (!PASSWORD_ENABLED) return true; // No password set, allow access
+
+	const sessionPassword = cookies.get('session_auth');
+	if (!sessionPassword) return false;
+
+	return sessionPassword === hashPassword(SITE_PASSWORD);
+}
+
+export const GET: RequestHandler = async ({ params, url, cookies }) => {
+	// Check authentication
+	if (!isAuthenticated(cookies)) {
+		return new Response(JSON.stringify({ error: 'Authentication required' }), {
+			status: 401,
+			headers: { 'Content-Type': 'application/json' }
+		});
+	}
+
 	try {
 		const filename = params.filename;
 		const filepath = join(IMAGES_PATH, filename);
