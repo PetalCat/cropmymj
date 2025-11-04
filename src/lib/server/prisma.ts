@@ -6,12 +6,12 @@ const databaseUrl = env.DATABASE_URL || process.env.DATABASE_URL;
 console.log('DATABASE_URL from env:', databaseUrl);
 
 const prisma = new PrismaClient({
-  log: ['error', 'warn'],
-  datasources: {
-    db: {
-      url: databaseUrl,
-    },
-  },
+	log: ['error', 'warn'],
+	datasources: {
+		db: {
+			url: databaseUrl
+		}
+	}
 });
 
 export default prisma;
