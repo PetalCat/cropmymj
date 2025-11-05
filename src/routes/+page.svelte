@@ -458,7 +458,7 @@
 						onmousedown={handleMouseDown}
 						ondragstart={(e) => e.preventDefault()}
 					></canvas>
-					
+
 					{#if transitioning}
 						<div class="transition-overlay">
 							<div class="transition-content">
@@ -595,10 +595,18 @@
 						<button class="btn btn-skip" onclick={handleSkip} disabled={loading || transitioning}>
 							⏭ Skip
 						</button>
-						<button class="btn btn-unfit" onclick={handleSkipUnfit} disabled={loading || transitioning}>
+						<button
+							class="btn btn-unfit"
+							onclick={handleSkipUnfit}
+							disabled={loading || transitioning}
+						>
 							🚫 Unfit
 						</button>
-						<button class="btn btn-submit" onclick={handleSubmit} disabled={loading || transitioning}>
+						<button
+							class="btn btn-submit"
+							onclick={handleSubmit}
+							disabled={loading || transitioning}
+						>
 							{#if loading}
 								<span class="spinner-small"></span>
 							{:else}
