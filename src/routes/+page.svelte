@@ -347,14 +347,14 @@
 				userSubmissionCount++; // Increment progress counter
 				transitioning = true; // Start transition animation
 				console.log('Submit successful, moving to next prioritized image in 1 second...');
-				
+
 				const animationStartTime = Date.now();
-				
+
 				// Select and preload next image during the animation
 				await selectNextImage();
 				console.log('Changed to prioritized image index:', currentImageIndex);
 				await tick(); // Wait for reactive statement to update
-				
+
 				// Preload the next image during animation
 				const nextImage = images[currentImageIndex];
 				if (nextImage && !imageCache.has(nextImage)) {
@@ -368,11 +368,11 @@
 						preloadImg.onerror = () => resolve(); // Continue even if preload fails
 					});
 				}
-				
+
 				// Wait for remaining animation time
 				const elapsed = Date.now() - animationStartTime;
 				const remainingTime = Math.max(0, 1000 - elapsed);
-				
+
 				setTimeout(() => {
 					transitioning = false;
 					loadImage();
