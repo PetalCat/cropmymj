@@ -347,14 +347,34 @@
 				userSubmissionCount++; // Increment progress counter
 				transitioning = true; // Start transition animation
 				console.log('Submit successful, moving to next prioritized image in 1 second...');
-				// Move to next prioritized image after a brief delay
-				setTimeout(async () => {
+				
+				// Select and preload next image during the animation
+				(async () => {
 					await selectNextImage();
 					console.log('Changed to prioritized image index:', currentImageIndex);
 					await tick(); // Wait for reactive statement to update
-					transitioning = false; // End transition animation
-					loadImage();
-				}, 1000);
+					
+					// Preload the next image during animation
+					const nextImage = images[currentImageIndex];
+					if (nextImage && !imageCache.has(nextImage)) {
+						const preloadImg = new Image();
+						preloadImg.src = `/api/images/${nextImage}?t=${cacheBuster}`;
+						await new Promise<void>((resolve) => {
+							preloadImg.onload = () => {
+								imageCache.set(nextImage, preloadImg);
+								resolve();
+							};
+							preloadImg.onerror = () => resolve(); // Continue even if preload fails
+						});
+					}
+					
+					// Wait for remaining animation time, then load
+					setTimeout(() => {
+						transitioning = false;
+						loadImage();
+					}, Math.max(0, 1000 - (Date.now() - (Date.now() - 1000))));
+				})();
+			}
 			} else {
 				const error = await res.json();
 				console.error('Submit failed:', error);
