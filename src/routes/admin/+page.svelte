@@ -105,7 +105,7 @@
 		if (index < 0 || index >= sortedImages.length) return;
 
 		const previousIndex = currentImageIndex;
-		
+
 		// Update index and open new image first
 		currentImageIndex = index;
 		if (sortedImages[currentImageIndex]) {
@@ -183,10 +183,10 @@
 				const data = await response.json();
 				images = data.images;
 				isAuthenticated = true;
-				
+
 				// Set initial timestamps for all images to bust cache
 				const now = Date.now();
-				images.forEach(img => {
+				images.forEach((img) => {
 					if (!imageTimestamps.has(img.filename)) {
 						imageTimestamps.set(img.filename, now);
 					}
@@ -225,7 +225,7 @@
 
 				// Find and restore the current image position
 				if (currentFilename) {
-					const newIndex = sortedImages.findIndex(img => img.filename === currentFilename);
+					const newIndex = sortedImages.findIndex((img) => img.filename === currentFilename);
 					if (newIndex !== -1) {
 						currentImageIndex = newIndex;
 					}
@@ -261,10 +261,10 @@
 
 				// Find and restore the current image position
 				if (currentFilename) {
-					const newIndex = sortedImages.findIndex(img => img.filename === currentFilename);
+					const newIndex = sortedImages.findIndex((img) => img.filename === currentFilename);
 					if (newIndex !== -1) {
 						currentImageIndex = newIndex;
-						
+
 						// Re-expand submissions if it was expanded
 						if (wasSubmissionsExpanded) {
 							const reloadedImageId = sortedImages[newIndex].image_id;
@@ -293,9 +293,9 @@
 		try {
 			isRotating = true;
 			// Find the current image to preserve its expanded state
-			const currentImage = images.find(img => img.filename === filename);
+			const currentImage = images.find((img) => img.filename === filename);
 			const wasExpanded = currentImage && expandedImages.has(currentImage.image_id);
-			
+
 			// Save current scroll position
 			const scrollY = window.scrollY;
 
@@ -310,22 +310,22 @@
 			if (response.ok) {
 				const result = await response.json();
 				console.log('Image rotated:', result);
-				
+
 				// Update timestamp to bust cache
 				imageTimestamps.set(filename, Date.now());
 				imageTimestamps = new Map(imageTimestamps);
-				
+
 				// Reload data to get updated coordinates and dimensions
 				await loadData();
-				
+
 				// Re-expand the image if it was expanded before rotation
 				if (wasExpanded && currentImage) {
 					// Find the image again after reload (image_id should be the same)
-					const reloadedImage = images.find(img => img.filename === filename);
+					const reloadedImage = images.find((img) => img.filename === filename);
 					if (reloadedImage) {
 						expandedImages.add(reloadedImage.image_id);
 						expandedImages = new Set(expandedImages);
-						
+
 						// Restore scroll position after DOM updates
 						requestAnimationFrame(() => {
 							window.scrollTo({ top: scrollY, behavior: 'instant' });
@@ -513,10 +513,7 @@
 							onclick={() => toggleImage(image.image_id)}
 						>
 							<div class="image-info">
-								<span
-									class="expand-icon"
-									class:expanded={expandedImages.has(image.image_id)}
-								>
+								<span class="expand-icon" class:expanded={expandedImages.has(image.image_id)}>
 									▶
 								</span>
 								<strong>{image.filename}</strong>
@@ -567,159 +564,162 @@
 									<div class="visual-section">
 										<h3>Visual Analysis</h3>
 										<div class="image-canvas-container">
-										<!-- Image placeholder with exact dimensions -->
-										<div
-											class="image-placeholder"
-											style="aspect-ratio: {image.width} / {image.height};"
-										>
-											<img
-												src="/api/images/{image.filename}?t={imageTimestamps.get(image.filename) || 0}"
-												alt={image.filename}
-												class="preview-image"
-												loading="lazy"
-											/>
-										</div>
-										{#if image.crop_stats}
-											<!-- Average crop overlay -->
+											<!-- Image placeholder with exact dimensions -->
 											<div
-												class="crop-overlay avg-crop"
-												style="
+												class="image-placeholder"
+												style="aspect-ratio: {image.width} / {image.height};"
+											>
+												<img
+													src="/api/images/{image.filename}?t={imageTimestamps.get(
+														image.filename
+													) || 0}"
+													alt={image.filename}
+													class="preview-image"
+													loading="lazy"
+												/>
+											</div>
+											{#if image.crop_stats}
+												<!-- Average crop overlay -->
+												<div
+													class="crop-overlay avg-crop"
+													style="
 													left: {(image.crop_stats.avg_x / image.width) * 100}%;
 													top: {(image.crop_stats.avg_y / image.height) * 100}%;
 													width: {(image.crop_stats.avg_width / image.width) * 100}%;
 													height: {(image.crop_stats.avg_height / image.height) * 100}%;
 												"
-											>
-												<span class="crop-label">AVG</span>
-											</div>
+												>
+													<span class="crop-label">AVG</span>
+												</div>
 
-											<!-- Show all submissions if toggle is on -->
-											{#if showAllSubmissions}
-												{#each image.all_crops as crop}
-													<div
-														class="crop-overlay all-crop"
-														style="
+												<!-- Show all submissions if toggle is on -->
+												{#if showAllSubmissions}
+													{#each image.all_crops as crop}
+														<div
+															class="crop-overlay all-crop"
+															style="
 															left: {(crop.x / image.width) * 100}%;
 															top: {(crop.y / image.height) * 100}%;
 															width: {(crop.width / image.width) * 100}%;
 															height: {(crop.height / image.height) * 100}%;
 														"
-													></div>
-												{/each}
-											{/if}
+														></div>
+													{/each}
+												{/if}
 
-											<!-- Outlier crops (always shown) -->
-											{#each image.outliers as outlier}
-												<button
-													class="crop-overlay outlier-crop clickable"
-													style="
+												<!-- Outlier crops (always shown) -->
+												{#each image.outliers as outlier}
+													<button
+														class="crop-overlay outlier-crop clickable"
+														style="
 														left: {(outlier.x / image.width) * 100}%;
 														top: {(outlier.y / image.height) * 100}%;
 														width: {(outlier.width / image.width) * 100}%;
 														height: {(outlier.height / image.height) * 100}%;
 														border-color: hsl({Math.max(0, 120 - outlier.deviation_score * 30)}, 80%, 50%);
 													"
-													title="Click to delete - Deviation: {outlier.deviation_score}σ"
-													onclick={(e) => {
-														e.stopPropagation();
-														deleteOutlier(outlier.id);
-													}}
-												>
-													<span class="crop-label outlier-label"
-														>{outlier.deviation_score.toFixed(1)}σ</span
+														title="Click to delete - Deviation: {outlier.deviation_score}σ"
+														onclick={(e) => {
+															e.stopPropagation();
+															deleteOutlier(outlier.id);
+														}}
 													>
-													<span class="delete-icon">🗑️</span>
-												</button>
-											{/each}
-										{/if}
+														<span class="crop-label outlier-label"
+															>{outlier.deviation_score.toFixed(1)}σ</span
+														>
+														<span class="delete-icon">🗑️</span>
+													</button>
+												{/each}
+											{/if}
 
-										<!-- Hover highlight overlay -->
-										{#if hoveredCropId !== null}
-											{@const hoveredCrop = image.all_crops.find(c => c.id === hoveredCropId)}
-											{#if hoveredCrop}
-												<div
-													class="crop-overlay hover-crop"
-													style="
+											<!-- Hover highlight overlay -->
+											{#if hoveredCropId !== null}
+												{@const hoveredCrop = image.all_crops.find((c) => c.id === hoveredCropId)}
+												{#if hoveredCrop}
+													<div
+														class="crop-overlay hover-crop"
+														style="
 														left: {(hoveredCrop.x / image.width) * 100}%;
 														top: {(hoveredCrop.y / image.height) * 100}%;
 														width: {(hoveredCrop.width / image.width) * 100}%;
 														height: {(hoveredCrop.height / image.height) * 100}%;
 													"
-												>
-													<span class="crop-label hover-label">HOVER</span>
+													>
+														<span class="crop-label hover-label">HOVER</span>
+													</div>
+												{/if}
+											{/if}
+										</div>
+										<div class="legend">
+											<div class="legend-item">
+												<span class="legend-box avg-box"></span>
+												<span>Average Crop</span>
+											</div>
+											{#if showAllSubmissions}
+												<div class="legend-item">
+													<span class="legend-box all-box"></span>
+													<span>All Submissions</span>
 												</div>
 											{/if}
-										{/if}
-									</div>
-									<div class="legend">
-										<div class="legend-item">
-											<span class="legend-box avg-box"></span>
-											<span>Average Crop</span>
-										</div>
-										{#if showAllSubmissions}
 											<div class="legend-item">
-												<span class="legend-box all-box"></span>
-												<span>All Submissions</span>
+												<span class="legend-box outlier-box"></span>
+												<span>Outlier Submissions (click to delete)</span>
+											</div>
+										</div>
+									</div>
+								{/key}
+
+								{#if image.all_crops.length > 0}
+									<div class="submissions-section">
+										<button
+											class="section-header"
+											onclick={() => {
+												if (expandedSubmissions.has(image.image_id)) {
+													expandedSubmissions.delete(image.image_id);
+												} else {
+													expandedSubmissions.add(image.image_id);
+												}
+												expandedSubmissions = new Set(expandedSubmissions);
+											}}
+										>
+											<h3>All Submissions ({image.all_crops.length})</h3>
+											<span
+												class="expand-icon"
+												class:expanded={expandedSubmissions.has(image.image_id)}>▼</span
+											>
+										</button>
+										{#if expandedSubmissions.has(image.image_id)}
+											<div class="submissions-list" transition:slide={{ duration: 300 }}>
+												{#each image.all_crops as crop (crop.id)}
+													<div
+														class="submission-item"
+														class:highlighted={hoveredCropId === crop.id}
+														onmouseenter={() => (hoveredCropId = crop.id)}
+														onmouseleave={() => (hoveredCropId = null)}
+														role="button"
+														tabindex="0"
+													>
+														<div class="submission-info">
+															<span class="submission-user">{crop.user_id}</span>
+															<span class="submission-coords"
+																>({crop.x}, {crop.y}) {crop.width}×{crop.height}</span
+															>
+														</div>
+														<button
+															class="btn-delete-small"
+															onclick={() => deleteSubmission(crop.id)}
+															title="Delete submission"
+														>
+															🗑️
+														</button>
+													</div>
+												{/each}
 											</div>
 										{/if}
-										<div class="legend-item">
-											<span class="legend-box outlier-box"></span>
-											<span>Outlier Submissions (click to delete)</span>
-										</div>
 									</div>
-								</div>
-							{/key}
+								{/if}
 
-							{#if image.all_crops.length > 0}
-								<div class="submissions-section">
-									<button
-										class="section-header"
-										onclick={() => {
-											if (expandedSubmissions.has(image.image_id)) {
-												expandedSubmissions.delete(image.image_id);
-											} else {
-												expandedSubmissions.add(image.image_id);
-											}
-											expandedSubmissions = new Set(expandedSubmissions);
-										}}
-									>
-										<h3>All Submissions ({image.all_crops.length})</h3>
-										<span class="expand-icon" class:expanded={expandedSubmissions.has(image.image_id)}
-											>▼</span
-										>
-									</button>
-									{#if expandedSubmissions.has(image.image_id)}
-										<div class="submissions-list" transition:slide={{ duration: 300 }}>
-											{#each image.all_crops as crop (crop.id)}
-												<div
-													class="submission-item"
-													class:highlighted={hoveredCropId === crop.id}
-													onmouseenter={() => (hoveredCropId = crop.id)}
-													onmouseleave={() => (hoveredCropId = null)}
-													role="button"
-													tabindex="0"
-												>
-													<div class="submission-info">
-														<span class="submission-user">{crop.user_id}</span>
-														<span class="submission-coords"
-															>({crop.x}, {crop.y}) {crop.width}×{crop.height}</span
-														>
-													</div>
-													<button
-														class="btn-delete-small"
-														onclick={() => deleteSubmission(crop.id)}
-														title="Delete submission"
-													>
-														🗑️
-													</button>
-												</div>
-											{/each}
-										</div>
-									{/if}
-								</div>
-							{/if}
-
-							{#if image.crop_stats}
+								{#if image.crop_stats}
 									<div class="stats-section">
 										<h3>Crop Statistics</h3>
 										<div class="stats-grid">
