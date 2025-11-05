@@ -345,12 +345,12 @@
 			if (res.ok) {
 				message = 'Submitted successfully!';
 				userSubmissionCount++; // Increment progress counter
-				
+
 				// Clear the green box and selection immediately
 				selectedOrientation = null;
 				currentRect = { x: 0, y: 0, width: 0, height: 0 };
 				drawCanvas();
-				
+
 				transitioning = true; // Start transition animation
 				console.log('Submit successful, moving to next prioritized image in 1 second...');
 
@@ -374,7 +374,7 @@
 						preloadImg.onerror = () => resolve(); // Continue even if preload fails
 					});
 				}
-				
+
 				// Also preload original dimensions
 				try {
 					const originalImg = new Image();
