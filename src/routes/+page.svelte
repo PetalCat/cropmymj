@@ -352,8 +352,8 @@
 					await selectNextImage();
 					console.log('Changed to prioritized image index:', currentImageIndex);
 					await tick(); // Wait for reactive statement to update
-					loadImage();
 					transitioning = false; // End transition animation
+					loadImage();
 				}, 1000);
 			} else {
 				const error = await res.json();
