@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { slide } from 'svelte/transition';
 
 	interface CropStats {
 		avg_x: number;
@@ -29,6 +30,7 @@
 		filename: string;
 		width: number;
 		height: number;
+		rotation?: number;
 		total_submissions: number;
 		total_unfits: number;
 		crop_stats: CropStats | null;
@@ -59,6 +61,10 @@
 	let sortBy: 'filename' | 'outliers' | 'submissions' = $state('filename');
 	let showAllSubmissions = $state(false);
 	let currentImageIndex = $state(0);
+	let isRotating = $state(false);
+	let imageTimestamps = $state(new Map<string, number>());
+	let hoveredCropId = $state<number | null>(null);
+	let expandedSubmissions = $state(new Set<number>());
 
 	onMount(() => {
 		// Try to load API key from localStorage
@@ -94,28 +100,35 @@
 	});
 
 	function navigateToImage(index: number) {
+		// Don't navigate while rotating
+		if (isRotating) return;
 		if (index < 0 || index >= sortedImages.length) return;
 
-		// Close current image
-		if (sortedImages[currentImageIndex]) {
-			expandedImages.delete(sortedImages[currentImageIndex].image_id);
-		}
-
-		// Update index and open new image
+		const previousIndex = currentImageIndex;
+		
+		// Update index and open new image first
 		currentImageIndex = index;
 		if (sortedImages[currentImageIndex]) {
 			expandedImages.add(sortedImages[currentImageIndex].image_id);
 			expandedImages = new Set(expandedImages);
 
-			// Scroll to the image
+			// Close previous image after a tiny delay (allows both to animate simultaneously)
 			setTimeout(() => {
-				const element = document.querySelector(
-					`[data-image-id="${sortedImages[currentImageIndex].image_id}"]`
-				);
-				if (element) {
-					element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				if (sortedImages[previousIndex] && previousIndex !== currentImageIndex) {
+					expandedImages.delete(sortedImages[previousIndex].image_id);
+					expandedImages = new Set(expandedImages);
 				}
-			}, 50);
+			}, 10);
+
+			// Wait for animations to complete, then scroll
+			setTimeout(() => {
+				const container = document.querySelector(
+					`[data-image-id="${sortedImages[currentImageIndex].image_id}"] .image-canvas-container`
+				) as HTMLElement;
+				if (container) {
+					container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				}
+			}, 350);
 		}
 	}
 
@@ -170,6 +183,15 @@
 				const data = await response.json();
 				images = data.images;
 				isAuthenticated = true;
+				
+				// Set initial timestamps for all images to bust cache
+				const now = Date.now();
+				images.forEach(img => {
+					if (!imageTimestamps.has(img.filename)) {
+						imageTimestamps.set(img.filename, now);
+					}
+				});
+				imageTimestamps = new Map(imageTimestamps);
 			} else {
 				error = 'Session expired or invalid API key';
 				isAuthenticated = false;
@@ -187,6 +209,9 @@
 		if (!confirm('Are you sure you want to delete this submission?')) return;
 
 		try {
+			// Save the current image filename to restore position after reload
+			const currentFilename = sortedImages[currentImageIndex]?.filename;
+
 			const response = await fetch(`/api/admin/submissions/${cropId}`, {
 				method: 'DELETE',
 				headers: {
@@ -197,6 +222,57 @@
 			if (response.ok) {
 				// Reload data
 				await loadData();
+
+				// Find and restore the current image position
+				if (currentFilename) {
+					const newIndex = sortedImages.findIndex(img => img.filename === currentFilename);
+					if (newIndex !== -1) {
+						currentImageIndex = newIndex;
+					}
+				}
+			} else {
+				error = 'Failed to delete submission';
+			}
+		} catch (err) {
+			error = 'Failed to delete submission';
+			console.error(err);
+		}
+	}
+
+	async function deleteSubmission(cropId: number) {
+		if (!confirm('Are you sure you want to delete this submission?')) return;
+
+		try {
+			// Save the current image filename and expanded state
+			const currentFilename = sortedImages[currentImageIndex]?.filename;
+			const currentImageId = sortedImages[currentImageIndex]?.image_id;
+			const wasSubmissionsExpanded = currentImageId && expandedSubmissions.has(currentImageId);
+
+			const response = await fetch(`/api/admin/submissions/${cropId}`, {
+				method: 'DELETE',
+				headers: {
+					Authorization: `Bearer ${apiKey}`
+				}
+			});
+
+			if (response.ok) {
+				// Reload data
+				await loadData();
+
+				// Find and restore the current image position
+				if (currentFilename) {
+					const newIndex = sortedImages.findIndex(img => img.filename === currentFilename);
+					if (newIndex !== -1) {
+						currentImageIndex = newIndex;
+						
+						// Re-expand submissions if it was expanded
+						if (wasSubmissionsExpanded) {
+							const reloadedImageId = sortedImages[newIndex].image_id;
+							expandedSubmissions.add(reloadedImageId);
+							expandedSubmissions = new Set(expandedSubmissions);
+						}
+					}
+				}
 			} else {
 				error = 'Failed to delete submission';
 			}
@@ -211,6 +287,71 @@
 		isAuthenticated = false;
 		localStorage.removeItem('adminApiKey');
 		images = [];
+	}
+
+	async function rotateImage(filename: string, rotation: number) {
+		try {
+			isRotating = true;
+			// Find the current image to preserve its expanded state
+			const currentImage = images.find(img => img.filename === filename);
+			const wasExpanded = currentImage && expandedImages.has(currentImage.image_id);
+			
+			// Save current scroll position
+			const scrollY = window.scrollY;
+
+			const response = await fetch('/api/admin/rotate-image', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ filename, rotation })
+			});
+
+			if (response.ok) {
+				const result = await response.json();
+				console.log('Image rotated:', result);
+				
+				// Update timestamp to bust cache
+				imageTimestamps.set(filename, Date.now());
+				imageTimestamps = new Map(imageTimestamps);
+				
+				// Reload data to get updated coordinates and dimensions
+				await loadData();
+				
+				// Re-expand the image if it was expanded before rotation
+				if (wasExpanded && currentImage) {
+					// Find the image again after reload (image_id should be the same)
+					const reloadedImage = images.find(img => img.filename === filename);
+					if (reloadedImage) {
+						expandedImages.add(reloadedImage.image_id);
+						expandedImages = new Set(expandedImages);
+						
+						// Restore scroll position after DOM updates
+						requestAnimationFrame(() => {
+							window.scrollTo({ top: scrollY, behavior: 'instant' });
+						});
+					}
+				}
+			} else {
+				const errorData = await response.json();
+				error = errorData.error || 'Failed to rotate image';
+			}
+		} catch (err) {
+			error = 'Failed to rotate image';
+			console.error(err);
+		} finally {
+			isRotating = false;
+		}
+	}
+
+	function rotateLeft(filename: string, currentRotation: number = 0) {
+		const newRotation = (currentRotation - 90 + 360) % 360;
+		rotateImage(filename, newRotation);
+	}
+
+	function rotateRight(filename: string, currentRotation: number = 0) {
+		const newRotation = (currentRotation + 90) % 360;
+		rotateImage(filename, newRotation);
 	}
 
 	function toggleImage(imageId: number) {
@@ -338,6 +479,16 @@
 						Show all submissions
 					</label>
 				</div>
+
+				<div class="keyboard-shortcuts">
+					<span class="shortcuts-label">⌨️ Shortcuts:</span>
+					<span class="shortcut-item">
+						<kbd>←</kbd><kbd>→</kbd> Navigate
+					</span>
+					<span class="shortcut-item">
+						<kbd>Space</kbd> Toggle
+					</span>
+				</div>
 			</div>
 		</div>
 
@@ -362,7 +513,12 @@
 							onclick={() => toggleImage(image.image_id)}
 						>
 							<div class="image-info">
-								<span class="expand-icon">{expandedImages.has(image.image_id) ? '▼' : '▶'}</span>
+								<span
+									class="expand-icon"
+									class:expanded={expandedImages.has(image.image_id)}
+								>
+									▶
+								</span>
 								<strong>{image.filename}</strong>
 								<span class="image-meta"
 									>{image.width}x{image.height} • {image.total_submissions} submissions</span
@@ -379,16 +535,50 @@
 						</button>
 
 						{#if expandedImages.has(image.image_id)}
-							<div class="image-details">
+							<div class="image-details" transition:slide={{ duration: 300 }}>
+								<!-- Rotation Controls -->
+								<div class="rotation-controls">
+									<h4>Rotate Image & Crops</h4>
+									<div class="rotation-buttons">
+										<button
+											class="rotation-btn rotate-left"
+											onclick={() => rotateLeft(image.filename, image.rotation)}
+											title="Rotate 90° counter-clockwise"
+										>
+											<span class="rotate-icon">↺</span>
+											<span>Rotate Left</span>
+										</button>
+										<button
+											class="rotation-btn rotate-right"
+											onclick={() => rotateRight(image.filename, image.rotation)}
+											title="Rotate 90° clockwise"
+										>
+											<span>Rotate Right</span>
+											<span class="rotate-icon">↻</span>
+										</button>
+									</div>
+									{#if image.rotation && image.rotation !== 0}
+										<p class="rotation-info">Current rotation: {image.rotation}°</p>
+									{/if}
+								</div>
+
 								<!-- Visual representation of image with avg crop and outliers -->
-								<div class="visual-section">
-									<h3>Visual Analysis</h3>
-									<div class="image-canvas-container">
-										<img
-											src="/api/images/{image.filename}"
-											alt={image.filename}
-											class="preview-image"
-										/>
+								{#key `${image.width}-${image.height}-${image.rotation}-${imageTimestamps.get(image.filename) || 0}`}
+									<div class="visual-section">
+										<h3>Visual Analysis</h3>
+										<div class="image-canvas-container">
+										<!-- Image placeholder with exact dimensions -->
+										<div
+											class="image-placeholder"
+											style="aspect-ratio: {image.width} / {image.height};"
+										>
+											<img
+												src="/api/images/{image.filename}?t={imageTimestamps.get(image.filename) || 0}"
+												alt={image.filename}
+												class="preview-image"
+												loading="lazy"
+											/>
+										</div>
 										{#if image.crop_stats}
 											<!-- Average crop overlay -->
 											<div
@@ -442,6 +632,24 @@
 												</button>
 											{/each}
 										{/if}
+
+										<!-- Hover highlight overlay -->
+										{#if hoveredCropId !== null}
+											{@const hoveredCrop = image.all_crops.find(c => c.id === hoveredCropId)}
+											{#if hoveredCrop}
+												<div
+													class="crop-overlay hover-crop"
+													style="
+														left: {(hoveredCrop.x / image.width) * 100}%;
+														top: {(hoveredCrop.y / image.height) * 100}%;
+														width: {(hoveredCrop.width / image.width) * 100}%;
+														height: {(hoveredCrop.height / image.height) * 100}%;
+													"
+												>
+													<span class="crop-label hover-label">HOVER</span>
+												</div>
+											{/if}
+										{/if}
 									</div>
 									<div class="legend">
 										<div class="legend-item">
@@ -460,8 +668,58 @@
 										</div>
 									</div>
 								</div>
+							{/key}
 
-								{#if image.crop_stats}
+							{#if image.all_crops.length > 0}
+								<div class="submissions-section">
+									<button
+										class="section-header"
+										onclick={() => {
+											if (expandedSubmissions.has(image.image_id)) {
+												expandedSubmissions.delete(image.image_id);
+											} else {
+												expandedSubmissions.add(image.image_id);
+											}
+											expandedSubmissions = new Set(expandedSubmissions);
+										}}
+									>
+										<h3>All Submissions ({image.all_crops.length})</h3>
+										<span class="expand-icon" class:expanded={expandedSubmissions.has(image.image_id)}
+											>▼</span
+										>
+									</button>
+									{#if expandedSubmissions.has(image.image_id)}
+										<div class="submissions-list" transition:slide={{ duration: 300 }}>
+											{#each image.all_crops as crop (crop.id)}
+												<div
+													class="submission-item"
+													class:highlighted={hoveredCropId === crop.id}
+													onmouseenter={() => (hoveredCropId = crop.id)}
+													onmouseleave={() => (hoveredCropId = null)}
+													role="button"
+													tabindex="0"
+												>
+													<div class="submission-info">
+														<span class="submission-user">{crop.user_id}</span>
+														<span class="submission-coords"
+															>({crop.x}, {crop.y}) {crop.width}×{crop.height}</span
+														>
+													</div>
+													<button
+														class="btn-delete-small"
+														onclick={() => deleteSubmission(crop.id)}
+														title="Delete submission"
+													>
+														🗑️
+													</button>
+												</div>
+											{/each}
+										</div>
+									{/if}
+								</div>
+							{/if}
+
+							{#if image.crop_stats}
 									<div class="stats-section">
 										<h3>Crop Statistics</h3>
 										<div class="stats-grid">
@@ -817,6 +1075,43 @@
 		max-width: 100px;
 	}
 
+	.keyboard-shortcuts {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		padding: 0.5rem 1rem;
+		background: rgba(102, 126, 234, 0.1);
+		border-radius: 8px;
+		border: 1px solid rgba(102, 126, 234, 0.3);
+		flex-wrap: wrap;
+	}
+
+	.shortcuts-label {
+		font-weight: 600;
+		color: #667eea;
+		font-size: 0.875rem;
+	}
+
+	.shortcut-item {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		font-size: 0.875rem;
+		color: #666;
+	}
+
+	kbd {
+		background: white;
+		border: 1px solid #ddd;
+		border-radius: 4px;
+		padding: 0.15rem 0.4rem;
+		font-family: monospace;
+		font-size: 0.75rem;
+		font-weight: 600;
+		box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+		color: #333;
+	}
+
 	.loading {
 		text-align: center;
 		padding: 4rem;
@@ -873,6 +1168,12 @@
 		border-radius: 12px;
 		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 		overflow: hidden;
+		transition: all 0.3s ease-out;
+	}
+
+	.image-card.current {
+		box-shadow: 0 6px 24px rgba(102, 126, 234, 0.4);
+		border: 2px solid #667eea;
 	}
 
 	.image-header {
@@ -912,6 +1213,12 @@
 	.expand-icon {
 		color: #667eea;
 		font-size: 0.875rem;
+		transition: transform 0.3s ease-out;
+		display: inline-block;
+	}
+
+	.expand-icon.expanded {
+		transform: rotate(90deg);
 	}
 
 	.image-meta {
@@ -945,6 +1252,110 @@
 		padding: 1.5rem;
 		border-top: 1px solid #e0e0e0;
 		background: #f8f9fa;
+		overflow: hidden;
+	}
+
+	.rotation-controls {
+		margin-bottom: 1.5rem;
+		padding: 1rem;
+		background: white;
+		border-radius: 8px;
+		border: 2px solid #e9ecef;
+	}
+
+	.rotation-controls h4 {
+		margin: 0 0 1rem 0;
+		font-size: 1rem;
+		color: #495057;
+	}
+
+	.rotation-buttons {
+		display: flex;
+		gap: 1rem;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	.rotation-btn {
+		padding: 0.75rem 1.5rem;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		cursor: pointer;
+		font-weight: 600;
+		font-size: 1rem;
+		transition: all 0.2s;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex: 1;
+		min-width: 140px;
+		justify-content: center;
+	}
+
+	.rotation-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+	}
+
+	.rotation-btn:active {
+		transform: translateY(0);
+	}
+
+	.rotate-icon {
+		font-size: 1.5rem;
+		line-height: 1;
+		font-weight: bold;
+	}
+
+	.rotate-left .rotate-icon {
+		animation: rotateLeftHint 2s ease-in-out infinite;
+	}
+
+	.rotate-right .rotate-icon {
+		animation: rotateRightHint 2s ease-in-out infinite;
+	}
+
+	@keyframes rotateLeftHint {
+		0%,
+		100% {
+			transform: rotate(0deg);
+		}
+		50% {
+			transform: rotate(-15deg);
+		}
+	}
+
+	@keyframes rotateRightHint {
+		0%,
+		100% {
+			transform: rotate(0deg);
+		}
+		50% {
+			transform: rotate(15deg);
+		}
+	}
+
+	.rotation-btn:hover .rotate-icon {
+		animation: none;
+	}
+
+	.rotation-btn:hover.rotate-left .rotate-icon {
+		transform: rotate(-90deg);
+		transition: transform 0.3s ease;
+	}
+
+	.rotation-btn:hover.rotate-right .rotate-icon {
+		transform: rotate(90deg);
+		transition: transform 0.3s ease;
+	}
+
+	.rotation-info {
+		margin-top: 0.5rem;
+		font-size: 0.85rem;
+		color: #6c757d;
+		font-weight: 500;
 	}
 
 	.visual-section {
@@ -955,16 +1366,28 @@
 		position: relative;
 		width: 100%;
 		max-width: 800px;
+		max-height: 600px;
 		margin: 0 auto 1rem;
 		border-radius: 8px;
 		overflow: hidden;
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 	}
 
-	.preview-image {
+	.image-placeholder {
 		width: 100%;
-		height: auto;
-		display: block;
+		max-height: 600px;
+		aspect-ratio: var(--aspect-ratio);
+		background: #1e1e1e;
+		position: relative;
+	}
+
+	.preview-image {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
 	}
 
 	.crop-overlay {
@@ -1090,12 +1513,14 @@
 
 	.stats-section,
 	.orientation-section,
+	.submissions-section,
 	.outliers-section {
 		margin-bottom: 1.5rem;
 	}
 
 	.stats-section:last-child,
 	.orientation-section:last-child,
+	.submissions-section:last-child,
 	.outliers-section:last-child {
 		margin-bottom: 0;
 	}
@@ -1193,5 +1618,117 @@
 		display: block;
 		font-size: 0.75rem;
 		margin-bottom: 0.25rem;
+	}
+
+	.submissions-section {
+		background: white;
+		border-radius: 8px;
+		padding: 0;
+		overflow: hidden;
+	}
+
+	.section-header {
+		width: 100%;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 1rem;
+		background: white;
+		border: none;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+
+	.section-header:hover {
+		background: #f8f9fa;
+	}
+
+	.section-header h3 {
+		margin: 0;
+	}
+
+	.expand-icon {
+		transition: transform 0.3s ease;
+		font-size: 0.875rem;
+		color: #667eea;
+	}
+
+	.expand-icon.expanded {
+		transform: rotate(180deg);
+	}
+
+	.submissions-list {
+		max-height: 400px;
+		overflow-y: auto;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		padding: 0 1rem 1rem 1rem;
+		background: #f8f9fa;
+	}
+
+	.submission-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 0.75rem;
+		background: #f8f9fa;
+		border-radius: 6px;
+		border: 2px solid transparent;
+		transition: all 0.2s;
+		cursor: pointer;
+	}
+
+	.submission-item:hover,
+	.submission-item.highlighted {
+		background: #e7f3ff;
+		border-color: #667eea;
+	}
+
+	.submission-info {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.submission-user {
+		font-weight: 600;
+		color: #495057;
+		font-size: 0.875rem;
+	}
+
+	.submission-coords {
+		font-size: 0.75rem;
+		color: #6c757d;
+		font-family: monospace;
+	}
+
+	.btn-delete-small {
+		background: #ff6b6b;
+		border: none;
+		border-radius: 4px;
+		padding: 0.375rem 0.5rem;
+		cursor: pointer;
+		font-size: 1rem;
+		transition: all 0.2s;
+		opacity: 0.7;
+	}
+
+	.btn-delete-small:hover {
+		opacity: 1;
+		transform: scale(1.1);
+	}
+
+	.hover-crop {
+		border: 3px solid #667eea !important;
+		background: rgba(102, 126, 234, 0.2) !important;
+		z-index: 100 !important;
+		box-shadow: 0 0 15px rgba(102, 126, 234, 0.5);
+	}
+
+	.hover-label {
+		background: #667eea !important;
+		color: white !important;
+		font-weight: bold;
 	}
 </style>

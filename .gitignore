@@ -69,3 +69,5 @@ logs/
 *.swp
 *.swo
 *~
+prisma/prisma/dev.db
+data/crops.db.backup

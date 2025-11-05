@@ -15,6 +15,7 @@
 	let selectedOrientation: 'side' | 'front' | null = $state(null);
 	let userId = '';
 	let loading = $state(false);
+	let transitioning = $state(false); // New state for the transition animation
 	let message = $state('');
 	let guidelinesExpanded = $state(true);
 	let userSubmissionCount = $state(0);
@@ -23,11 +24,47 @@
 	// Image preloading cache
 	const imageCache = new Map<string, HTMLImageElement>();
 	const PRELOAD_COUNT = 3; // Number of images to preload ahead
+	const cacheBuster = Date.now(); // Cache buster for all image loads
 
 	let currentImage = $derived(images[currentImageIndex]);
 	let progressPercentage = $derived(
 		totalImages > 0 ? Math.round((userSubmissionCount / totalImages) * 100) : 0
 	);
+
+	// Function to get next prioritized image
+	async function getNextImage(): Promise<string | null> {
+		try {
+			const res = await fetch(`/api/next-image?userId=${userId}`);
+			if (res.ok) {
+				const data = await res.json();
+				console.log('Next image data:', data);
+				return data.filename;
+			} else {
+				console.error('Failed to get next image, falling back to random');
+				return null;
+			}
+		} catch (error) {
+			console.error('Error getting next image:', error);
+			return null;
+		}
+	}
+
+	// Function to select next image (smart or fallback to random)
+	async function selectNextImage() {
+		const nextFilename = await getNextImage();
+		if (nextFilename) {
+			const index = images.indexOf(nextFilename);
+			if (index !== -1) {
+				currentImageIndex = index;
+			} else {
+				// Fallback to random if image not found in list
+				currentImageIndex = Math.floor(Math.random() * images.length);
+			}
+		} else {
+			// Fallback to random selection
+			currentImageIndex = Math.floor(Math.random() * images.length);
+		}
+	}
 
 	async function fetchUserProgress() {
 		try {
@@ -55,7 +92,7 @@
 
 			if (filename && !imageCache.has(filename)) {
 				const preloadImg = new Image();
-				preloadImg.src = `/api/images/${filename}`;
+				preloadImg.src = `/api/images/${filename}?t=${cacheBuster}`;
 				preloadImg.onload = () => {
 					imageCache.set(filename, preloadImg);
 					console.log(`Preloaded: ${filename} (cache size: ${imageCache.size})`);
@@ -99,9 +136,9 @@
 			await fetchUserProgress();
 
 			if (images.length > 0) {
-				// Start with a random image
-				currentImageIndex = Math.floor(Math.random() * images.length);
-				console.log('Starting with random image index:', currentImageIndex);
+				// Start with a prioritized image
+				await selectNextImage();
+				console.log('Starting with prioritized image index:', currentImageIndex);
 
 				// Wait for DOM to update
 				await tick();
@@ -140,7 +177,7 @@
 					resolve();
 				};
 				originalImg.onerror = reject;
-				originalImg.src = `/api/images/${currentImage}?original=true`;
+				originalImg.src = `/api/images/${currentImage}?original=true&t=${cacheBuster}`;
 			});
 		} catch (error) {
 			console.error('Failed to load original dimensions:', error);
@@ -207,7 +244,7 @@
 				console.error('Failed to load image:', currentImage, error);
 				message = 'Failed to load image. Please try the next one.';
 			};
-			img.src = `/api/images/${currentImage}`;
+			img.src = `/api/images/${currentImage}?t=${cacheBuster}`;
 			console.log('Image src set to:', img.src);
 		}
 
@@ -308,14 +345,15 @@
 			if (res.ok) {
 				message = 'Submitted successfully!';
 				userSubmissionCount++; // Increment progress counter
-				console.log('Submit successful, moving to random image in 1 second...');
-				// Move to random image after a brief delay
+				transitioning = true; // Start transition animation
+				console.log('Submit successful, moving to next prioritized image in 1 second...');
+				// Move to next prioritized image after a brief delay
 				setTimeout(async () => {
-					const newIndex = Math.floor(Math.random() * images.length);
-					console.log('Changing from image', currentImageIndex, 'to', newIndex);
-					currentImageIndex = newIndex;
+					await selectNextImage();
+					console.log('Changed to prioritized image index:', currentImageIndex);
 					await tick(); // Wait for reactive statement to update
 					loadImage();
+					transitioning = false; // End transition animation
 				}, 1000);
 			} else {
 				const error = await res.json();
@@ -331,8 +369,8 @@
 	}
 
 	async function handleSkip() {
-		// Go to a random image
-		currentImageIndex = Math.floor(Math.random() * images.length);
+		// Go to next prioritized image
+		await selectNextImage();
 		await tick(); // Wait for reactive statement to update
 		loadImage();
 	}
@@ -360,9 +398,9 @@
 					message = '';
 				}, 2000);
 
-				// Go to a random image after a short delay
+				// Go to next prioritized image after a short delay
 				setTimeout(async () => {
-					currentImageIndex = Math.floor(Math.random() * images.length);
+					await selectNextImage();
 					await tick(); // Wait for reactive statement to update
 					loadImage();
 				}, 300);
@@ -420,6 +458,20 @@
 						onmousedown={handleMouseDown}
 						ondragstart={(e) => e.preventDefault()}
 					></canvas>
+					
+					{#if transitioning}
+						<div class="transition-overlay">
+							<div class="transition-content">
+								<div class="checkmark-animation">✓</div>
+								<div class="loading-dots">
+									<span class="dot">●</span>
+									<span class="dot">●</span>
+									<span class="dot">●</span>
+								</div>
+								<p class="transition-text">Loading next image...</p>
+							</div>
+						</div>
+					{/if}
 				</div>
 			</div>
 
@@ -517,6 +569,7 @@
 							class="orientation-btn"
 							class:selected={selectedOrientation === 'side'}
 							onclick={() => (selectedOrientation = 'side')}
+							disabled={transitioning}
 						>
 							<span class="icon">👈</span>
 							<span>Side View</span>
@@ -525,6 +578,7 @@
 							class="orientation-btn"
 							class:selected={selectedOrientation === 'front'}
 							onclick={() => (selectedOrientation = 'front')}
+							disabled={transitioning}
 						>
 							<span class="icon">👤</span>
 							<span>Front/Back View</span>
@@ -538,11 +592,13 @@
 						<p><strong>🚫 Unfit</strong> if Matthew's shoulders/head are not clearly visible</p>
 					</div>
 					<div class="action-buttons">
-						<button class="btn btn-skip" onclick={handleSkip} disabled={loading}> ⏭ Skip </button>
-						<button class="btn btn-unfit" onclick={handleSkipUnfit} disabled={loading}>
+						<button class="btn btn-skip" onclick={handleSkip} disabled={loading || transitioning}>
+							⏭ Skip
+						</button>
+						<button class="btn btn-unfit" onclick={handleSkipUnfit} disabled={loading || transitioning}>
 							🚫 Unfit
 						</button>
-						<button class="btn btn-submit" onclick={handleSubmit} disabled={loading}>
+						<button class="btn btn-submit" onclick={handleSubmit} disabled={loading || transitioning}>
 							{#if loading}
 								<span class="spinner-small"></span>
 							{:else}
@@ -739,6 +795,109 @@
 		}
 	}
 
+	/* Transition overlay animation */
+	.transition-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.85);
+		backdrop-filter: blur(4px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 100;
+		animation: fadeIn 0.3s ease-in;
+		border-radius: 12px;
+	}
+
+	.transition-content {
+		text-align: center;
+		animation: bounceIn 0.5s ease-out;
+	}
+
+	.checkmark-animation {
+		font-size: 4rem;
+		color: #4ade80;
+		animation: checkmarkPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+		margin-bottom: 1rem;
+	}
+
+	.loading-dots {
+		display: flex;
+		gap: 0.5rem;
+		justify-content: center;
+		margin-bottom: 1rem;
+	}
+
+	.loading-dots .dot {
+		color: #60a5fa;
+		font-size: 1.5rem;
+		animation: dotBounce 1.4s infinite ease-in-out both;
+	}
+
+	.loading-dots .dot:nth-child(1) {
+		animation-delay: -0.32s;
+	}
+
+	.loading-dots .dot:nth-child(2) {
+		animation-delay: -0.16s;
+	}
+
+	.transition-text {
+		color: white;
+		font-size: 1.1rem;
+		font-weight: 500;
+		margin: 0;
+		opacity: 0.9;
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes bounceIn {
+		from {
+			transform: scale(0.8);
+			opacity: 0;
+		}
+		to {
+			transform: scale(1);
+			opacity: 1;
+		}
+	}
+
+	@keyframes checkmarkPop {
+		0% {
+			transform: scale(0);
+			opacity: 0;
+		}
+		50% {
+			transform: scale(1.2);
+		}
+		100% {
+			transform: scale(1);
+			opacity: 1;
+		}
+	}
+
+	@keyframes dotBounce {
+		0%,
+		80%,
+		100% {
+			transform: translateY(0) scale(1);
+		}
+		40% {
+			transform: translateY(-10px) scale(1.1);
+		}
+	}
+
 	.progress-bar {
 		background: rgba(255, 255, 255, 0.2);
 		border-radius: 20px;
@@ -775,6 +934,7 @@
 	}
 
 	.canvas-container {
+		position: relative;
 		display: flex;
 		justify-content: center;
 		align-items: center;

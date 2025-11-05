@@ -167,6 +167,7 @@ export const GET: RequestHandler = async (event) => {
 				filename: image.filename,
 				width: image.width,
 				height: image.height,
+				rotation: image.rotation || 0,
 				total_submissions: crops.length,
 				total_unfits: unfits.length,
 				crop_stats: stats,

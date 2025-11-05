@@ -15,6 +15,7 @@ model Image {
   filename    String        @unique
   width       Int
   height      Int
+  rotation    Int           @default(0) // 0, 90, 180, 270 degrees
   created_at  DateTime      @default(now())
   crops       Crop[]
   orientations Orientation[]
