@@ -345,6 +345,12 @@
 			if (res.ok) {
 				message = 'Submitted successfully!';
 				userSubmissionCount++; // Increment progress counter
+				
+				// Clear the green box and selection immediately
+				selectedOrientation = null;
+				currentRect = { x: 0, y: 0, width: 0, height: 0 };
+				drawCanvas();
+				
 				transitioning = true; // Start transition animation
 				console.log('Submit successful, moving to next prioritized image in 1 second...');
 
@@ -355,7 +361,7 @@
 				console.log('Changed to prioritized image index:', currentImageIndex);
 				await tick(); // Wait for reactive statement to update
 
-				// Preload the next image during animation
+				// Preload the compressed image and original dimensions during animation
 				const nextImage = images[currentImageIndex];
 				if (nextImage && !imageCache.has(nextImage)) {
 					const preloadImg = new Image();
@@ -367,6 +373,22 @@
 						};
 						preloadImg.onerror = () => resolve(); // Continue even if preload fails
 					});
+				}
+				
+				// Also preload original dimensions
+				try {
+					const originalImg = new Image();
+					await new Promise<void>((resolve, reject) => {
+						originalImg.onload = () => {
+							originalWidth = originalImg.width;
+							originalHeight = originalImg.height;
+							resolve();
+						};
+						originalImg.onerror = () => resolve(); // Continue even if fails
+						originalImg.src = `/api/images/${nextImage}?original=true&t=${cacheBuster}`;
+					});
+				} catch (error) {
+					console.error('Failed to preload original dimensions:', error);
 				}
 
 				// Wait for remaining animation time
